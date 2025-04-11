@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="css/cards.css">
     <link rel="stylesheet" href="css/game.css">
     <link rel="stylesheet" href="css/menu.css">
+    <link rel="stylesheet" href="css/chat.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -40,7 +41,7 @@
             </button>
         </div>
         <div class="version-info">
-            v1.0.0 - Atualizado em 11/04/2025 16:54:02<br>
+            v1.2.0 - Atualizado em 11/04/2025 17:11:13<br>
             Desenvolvido por Duduxindev
         </div>
     </div>
@@ -216,80 +217,135 @@
     <!-- Tela de Sala de Espera -->
     <div id="waiting-room-screen" class="screen">
         <h2>Sala de Espera</h2>
-        <div class="room-info">
-            <div class="room-code-box">
-                <h3>Código da Sala:</h3>
-                <div class="code-display">
-                    <span id="room-code-display">XXXX</span>
-                    <button id="copy-code-btn" class="icon-btn" title="Copiar código">CP</button>
+        <div class="waiting-room-layout">
+            <div class="waiting-room-left">
+                <div class="room-info">
+                    <div class="room-code-box">
+                        <h3>Código da Sala:</h3>
+                        <div class="code-display">
+                            <span id="room-code-display">XXXX</span>
+                            <button id="copy-code-btn" class="icon-btn" title="Copiar código">Copiar</button>
+                        </div>
+                        <p class="share-text">Compartilhe este código com seus amigos para que eles possam entrar na sala em seus dispositivos.</p>
+                    </div>
+                    <div class="room-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Modo:</span>
+                            <span id="room-mode-display" class="detail-value">Normal</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Jogadores:</span>
+                            <span id="room-players-count" class="detail-value">1/4</span>
+                        </div>
+                    </div>
                 </div>
-                <p class="share-text">Compartilhe este código com seus amigos para que eles possam entrar na sala em seus dispositivos.</p>
+                <div class="players-container">
+                    <h3>Jogadores</h3>
+                    <ul id="players-list" class="players-list">
+                        <!-- Jogadores serão adicionados dinamicamente -->
+                    </ul>
+                </div>
+                <div class="waiting-message" id="waiting-message">
+                    <p>Aguardando jogadores entrarem na sala...</p>
+                </div>
+                <div class="buttons-row">
+                    <button id="start-game-btn" class="primary-btn">Iniciar Jogo</button>
+                    <button id="leave-room-btn" class="secondary-btn">Sair da Sala</button>
+                </div>
             </div>
-            <div class="room-details">
-                <div class="detail-item">
-                    <span class="detail-label">Modo:</span>
-                    <span id="room-mode-display" class="detail-value">Normal</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Jogadores:</span>
-                    <span id="room-players-count" class="detail-value">1/4</span>
+            
+            <!-- Nova seção de chat na sala de espera -->
+            <div class="waiting-room-right">
+                <div class="chat-container">
+                    <h3>Chat da Sala</h3>
+                    <div id="waiting-chat-messages" class="chat-messages">
+                        <!-- Mensagens serão adicionadas dinamicamente -->
+                        <div class="system-message">Bem-vindo ao chat! Converse com outros jogadores aqui.</div>
+                    </div>
+                    <div class="chat-input-container">
+                        <input type="text" id="waiting-chat-input" class="chat-input" placeholder="Digite sua mensagem...">
+                        <button id="waiting-chat-send" class="chat-send-btn">Enviar</button>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="players-container">
-            <h3>Jogadores</h3>
-            <ul id="players-list" class="players-list">
-                <!-- Jogadores serão adicionados dinamicamente -->
-            </ul>
-        </div>
-        <div class="waiting-message" id="waiting-message">
-            <p>Aguardando jogadores entrarem na sala...</p>
-        </div>
-        <div class="buttons-row">
-            <button id="start-game-btn" class="primary-btn">Iniciar Jogo</button>
-            <button id="leave-room-btn" class="secondary-btn">Sair da Sala</button>
         </div>
     </div>
 
     <!-- Tela de Jogo -->
     <div id="game-screen" class="screen">
-        <div class="game-header">
-            <div class="game-info">
-                <span id="current-player">Vez de: Jogador 1</span>
-                <span id="cards-left">Cartas no monte: 87</span>
-            </div>
-            <div class="game-actions">
-                <button id="uno-btn" class="action-btn uno-btn">UNO!</button>
-                <button id="menu-btn" class="action-btn menu-btn">Menu</button>
-            </div>
-        </div>
-        
-        <div class="game-table">
-            <div class="opponents-container" id="opponents-container">
-                <!-- Oponentes serão adicionados dinamicamente -->
-            </div>
-            
-            <div class="center-area">
-                <div class="deck-area">
-                    <div id="draw-pile" class="card-pile draw-pile">
-                        <!-- Pilha de compra -->
+        <div class="game-layout">
+            <div class="game-main">
+                <div class="game-header">
+                    <div class="game-info">
+                        <span id="current-player">Vez de: Jogador 1</span>
+                        <span id="cards-left">Cartas no monte: 87</span>
                     </div>
-                    <div id="discard-pile" class="card-pile discard-pile">
-                        <!-- Pilha de descarte -->
+                    <div class="game-actions">
+                        <button id="uno-btn" class="action-btn uno-btn">UNO!</button>
+                        <button id="menu-btn" class="action-btn menu-btn">Menu</button>
                     </div>
                 </div>
-                <div id="game-messages" class="game-messages">
-                    <!-- Mensagens do jogo -->
+                
+                <div class="game-table">
+                    <div class="opponents-container" id="opponents-container">
+                        <!-- Oponentes serão adicionados dinamicamente -->
+                    </div>
+                    
+                    <div class="center-area">
+                        <div class="game-status-indicator" id="game-status-indicator">
+                            <div class="status-text">Seu turno!</div>
+                            <div class="timer-bar"><div class="timer-progress"></div></div>
+                        </div>
+                        
+                        <div class="deck-area">
+                            <div id="draw-pile" class="card-pile draw-pile">
+                                <!-- Pilha de compra -->
+                            </div>
+                            <div id="discard-pile" class="card-pile discard-pile">
+                                <!-- Pilha de descarte -->
+                            </div>
+                        </div>
+                        <div id="game-messages" class="game-messages">
+                            <!-- Mensagens do jogo -->
+                        </div>
+                    </div>
+                    
+                    <div class="player-hand-container">
+                        <div class="player-info">
+                            <div class="player-info-left">
+                                <span id="player-name-display">Você</span>
+                                <span id="card-count">7 cartas</span>
+                            </div>
+                            <div id="cards-preview" class="cards-preview">
+                                <!-- Preview das cartas jogáveis -->
+                            </div>
+                        </div>
+                        <div id="player-hand" class="player-hand">
+                            <!-- As cartas do jogador serão adicionadas aqui -->
+                        </div>
+                    </div>
                 </div>
             </div>
             
-            <div class="player-hand-container">
-                <div class="player-info">
-                    <span id="player-name-display">Você</span>
-                    <span id="card-count">7 cartas</span>
+            <!-- Nova seção de chat no jogo -->
+            <div class="game-sidebar">
+                <div class="chat-container">
+                    <h3>Chat</h3>
+                    <div id="game-chat-messages" class="chat-messages">
+                        <!-- Mensagens serão adicionadas dinamicamente -->
+                        <div class="system-message">Use "!uno" para chamar UNO pelo chat!</div>
+                    </div>
+                    <div class="chat-input-container">
+                        <input type="text" id="game-chat-input" class="chat-input" placeholder="Digite sua mensagem...">
+                        <button id="game-chat-send" class="chat-send-btn">Enviar</button>
+                    </div>
                 </div>
-                <div id="player-hand" class="player-hand">
-                    <!-- As cartas do jogador serão adicionadas aqui -->
+                
+                <div class="game-stats">
+                    <h3>Estatísticas</h3>
+                    <div id="game-stats-content" class="game-stats-content">
+                        <!-- Estatísticas serão adicionadas dinamicamente -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -398,6 +454,13 @@
                         <span class="slider"></span>
                     </label>
                 </div>
+                <div class="option-item">
+                    <label for="show-playable">Destacar Cartas Jogáveis</label>
+                    <label class="switch">
+                        <input type="checkbox" id="show-playable" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
             </div>
         </div>
         <button id="back-from-options" class="secondary-btn">Voltar</button>
@@ -413,6 +476,7 @@
     <script src="js/player.js"></script>
     <script src="js/modes.js"></script>
     <script src="js/room.js"></script>
+    <script src="js/chat.js"></script>
     <script src="js/game.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/app.js"></script>
@@ -433,7 +497,8 @@
                 {name: 'Player', obj: window.Player},
                 {name: 'GameMode', obj: window.GameMode},
                 {name: 'UnoGame', obj: window.UnoGame},
-                {name: 'GameStorage', obj: window.GameStorage}
+                {name: 'GameStorage', obj: window.GameStorage},
+                {name: 'ChatManager', obj: window.ChatManager}
             ];
             
             const missingClasses = classesCheck.filter(c => typeof c.obj !== 'function');
