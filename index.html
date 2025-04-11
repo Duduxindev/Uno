@@ -10,10 +10,7 @@
     <link rel="stylesheet" href="css/game.css">
     <link rel="stylesheet" href="css/menu.css">
     <link rel="stylesheet" href="css/chat.css">
-    <link rel="stylesheet" href="css/emergency-fix.css">
-    <link rel="stylesheet" href="css/game-fixes.css">
-    <link rel="stylesheet" href="css/final-fixes.css">
-    <link rel="stylesheet" href="css/auto-start-fix.css">
+    <link rel="stylesheet" href="css/uno-master-fix.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -45,7 +42,7 @@
             </button>
         </div>
         <div class="version-info">
-            v2.0.0 - Atualizado em 2025-04-11 20:47:50<br>
+            v2.0.0 - Atualizado em 2025-04-11 21:04:03<br>
             Desenvolvido por Duduxindev
         </div>
     </div>
@@ -532,46 +529,11 @@
     <script src="js/ai-player.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/app.js"></script>
-    <script src="js/emergency-fix.js"></script>
-    <script src="js/game-fixes.js"></script>
-    <script src="js/final-fixes.js"></script>
-    <script src="js/auto-start-fix.js"></script>
+    <script src="js/uno-master-fix.js"></script>
     
     <!-- Script para inicialização - Garante funcionamento dos botões -->
     <script>
         console.log("Inicializando aplicação UNO em: " + new Date().toISOString());
-        
-        function showScreen(screenId) {
-            // Esconder todas as telas
-            document.querySelectorAll('.screen').forEach(screen => {
-                screen.classList.remove('active');
-            });
-            
-            // Mostrar a tela solicitada
-            const targetScreen = document.getElementById(screenId);
-            if (targetScreen) {
-                targetScreen.classList.add('active');
-                console.log(`Navegando para a tela: ${screenId}`);
-                
-                // Disparar evento de mudança de tela
-                const event = new CustomEvent('screenChange', {
-                    detail: { screen: screenId }
-                });
-                document.dispatchEvent(event);
-                
-                // Inicializações específicas por tela
-                if (screenId === 'game-screen') {
-                    // Inicializar a tela de jogo
-                    setTimeout(function() {
-                        if (window.generatePlayerCards) {
-                            window.generatePlayerCards();
-                        }
-                    }, 500);
-                }
-            } else {
-                console.error(`Tela não encontrada: ${screenId}`);
-            }
-        }
         
         // Verificar se todos os scripts foram carregados corretamente
         document.addEventListener('DOMContentLoaded', function() {
@@ -590,21 +552,14 @@
                 console.log("🔍 Verificando carregamento de correções...");
                 
                 // Verificar se as correções estão funcionando
-                if (!window.gameFixesApplied) {
+                if (!window.unoMasterFixApplied) {
                     console.log("⚠️ Aplicando correções manualmente...");
                     
-                    // Recarregar scripts com timestamp para evitar cache
-                    const timestamp = Date.now();
-                    
-                    ['js/game-fixes.js', 'js/final-fixes.js', 'js/auto-start-fix.js'].forEach(scriptSrc => {
-                        const script = document.createElement('script');
-                        script.src = `${scriptSrc}?t=${timestamp}`;
-                        document.body.appendChild(script);
-                    });
+                    // Recarregar script com timestamp para evitar cache
+                    const script = document.createElement('script');
+                    script.src = `js/uno-master-fix.js?t=${Date.now()}`;
+                    document.body.appendChild(script);
                 }
-                
-                // Definir flag para indicar que verificamos
-                window.gameFixesApplied = true;
                 
                 console.log("🎮 UNO Game - Correções carregadas em: " + new Date().toISOString());
             }, 2000);
