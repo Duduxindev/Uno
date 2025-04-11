@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="css/emergency-fix.css">
     <link rel="stylesheet" href="css/game-fixes.css">
     <link rel="stylesheet" href="css/final-fixes.css">
+    <link rel="stylesheet" href="css/auto-start-fix.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -44,7 +45,7 @@
             </button>
         </div>
         <div class="version-info">
-            v2.0.0 - Atualizado em 2025-04-11 20:38:52<br>
+            v2.0.0 - Atualizado em 2025-04-11 20:47:50<br>
             Desenvolvido por Duduxindev
         </div>
     </div>
@@ -534,6 +535,7 @@
     <script src="js/emergency-fix.js"></script>
     <script src="js/game-fixes.js"></script>
     <script src="js/final-fixes.js"></script>
+    <script src="js/auto-start-fix.js"></script>
     
     <!-- Script para inicialização - Garante funcionamento dos botões -->
     <script>
@@ -556,6 +558,16 @@
                     detail: { screen: screenId }
                 });
                 document.dispatchEvent(event);
+                
+                // Inicializações específicas por tela
+                if (screenId === 'game-screen') {
+                    // Inicializar a tela de jogo
+                    setTimeout(function() {
+                        if (window.generatePlayerCards) {
+                            window.generatePlayerCards();
+                        }
+                    }, 500);
+                }
             } else {
                 console.error(`Tela não encontrada: ${screenId}`);
             }
@@ -577,13 +589,22 @@
             setTimeout(function() {
                 console.log("🔍 Verificando carregamento de correções...");
                 
-                // Verificar se as correções finais estão funcionando
-                if (!document.querySelector('.game-message')) {
-                    console.log("⚠️ Aplicando correções finais manualmente...");
-                    const script = document.createElement('script');
-                    script.src = 'js/final-fixes.js?t=' + Date.now();
-                    document.body.appendChild(script);
+                // Verificar se as correções estão funcionando
+                if (!window.gameFixesApplied) {
+                    console.log("⚠️ Aplicando correções manualmente...");
+                    
+                    // Recarregar scripts com timestamp para evitar cache
+                    const timestamp = Date.now();
+                    
+                    ['js/game-fixes.js', 'js/final-fixes.js', 'js/auto-start-fix.js'].forEach(scriptSrc => {
+                        const script = document.createElement('script');
+                        script.src = `${scriptSrc}?t=${timestamp}`;
+                        document.body.appendChild(script);
+                    });
                 }
+                
+                // Definir flag para indicar que verificamos
+                window.gameFixesApplied = true;
                 
                 console.log("🎮 UNO Game - Correções carregadas em: " + new Date().toISOString());
             }, 2000);
