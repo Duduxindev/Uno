@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="css/menu.css">
     <link rel="stylesheet" href="css/chat.css">
     <link rel="stylesheet" href="css/emergency-fix.css">
-    <link rel="stylesheet" href="css/complete-fix.css">
+    <link rel="stylesheet" href="css/game-fixes.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -43,7 +43,7 @@
             </button>
         </div>
         <div class="version-info">
-            v2.0.0 - Atualizado em 2025-04-11 20:12:04<br>
+            v2.0.0 - Atualizado em 2025-04-11 20:28:28<br>
             Desenvolvido por Duduxindev
         </div>
     </div>
@@ -531,8 +531,7 @@
     <script src="js/ui.js"></script>
     <script src="js/app.js"></script>
     <script src="js/emergency-fix.js"></script>
-    <script src="js/complete-fix.js"></script>
-
+    <script src="js/game-fixes.js"></script>
     
     <!-- Script para inicialização - Garante funcionamento dos botões -->
     <script>
@@ -549,6 +548,12 @@
             if (targetScreen) {
                 targetScreen.classList.add('active');
                 console.log(`Navegando para a tela: ${screenId}`);
+                
+                // Disparar evento de mudança de tela
+                const event = new CustomEvent('screenChange', {
+                    detail: { screen: screenId }
+                });
+                document.dispatchEvent(event);
             } else {
                 console.error(`Tela não encontrada: ${screenId}`);
             }
@@ -558,43 +563,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log("DOM carregado completamente");
             
-            // Verificar botões principais
-            const mainButtons = [
-                {id: 'play-local-btn', target: 'local-game-screen'},
-                {id: 'play-online-btn', target: 'online-options-screen'},
-                {id: 'options-btn', target: 'options-screen'},
-                {id: 'rules-btn', target: 'rules-screen'},
-                {id: 'back-from-local', target: 'start-screen'},
-                {id: 'back-from-online-options', target: 'start-screen'},
-                {id: 'create-room-option', target: 'create-room-screen'},
-                {id: 'join-room-option', target: 'join-room-screen'},
-                {id: 'back-from-create', target: 'online-options-screen'},
-                {id: 'back-from-join', target: 'online-options-screen'},
-                {id: 'back-from-rules', target: 'start-screen'},
-                {id: 'back-from-options', target: 'start-screen'}
-            ];
-            
-            mainButtons.forEach(button => {
-                const btn = document.getElementById(button.id);
-                if (btn) {
-                    console.log(`Configurando botão: ${button.id}`);
-                    
-                    // Substituir o botão para limpar qualquer event listener anterior
-                    const newBtn = btn.cloneNode(true);
-                    if (btn.parentNode) {
-                        btn.parentNode.replaceChild(newBtn, btn);
-                    }
-                    
-                    // Adicionar novo event listener
-                    newBtn.addEventListener('click', function() {
-                        console.log(`Botão ${button.id} clicado!`);
-                        showScreen(button.target);
-                    });
-                } else {
-                    console.error(`Botão não encontrado: ${button.id}`);
-                }
-            });
-            
             // Adicionar pulsação animada ao botão de iniciar jogo
             const pulseButton = document.querySelector('.pulse-button');
             if (pulseButton) {
@@ -603,15 +571,16 @@
                 }, 1500);
             }
             
-            // Forçar inicialização imediata da correção
-            setTimeout(function() {
-                if (!window.directCardRenderer) {
-                    console.log("⚠️ Correção não iniciada, forçando inicialização");
-                    const scriptElement = document.createElement('script');
-                    scriptElement.src = 'js/emergency-fix.js?t=' + Date.now();
-                    document.body.appendChild(scriptElement);
-                }
-            }, 1000);
+            // Verificar carregamento das correções
+            if (!window.gameFixesApplied) {
+                console.log("⚠️ Forçando carregamento de correções...");
+                // Criar script dinamicamente para garantir execução
+                const script = document.createElement('script');
+                script.src = 'js/game-fixes.js?t=' + Date.now();
+                document.body.appendChild(script);
+            }
+            
+            console.log("🎮 UNO Game - Correções carregadas em: " + new Date().toISOString());
         });
     </script>
 
