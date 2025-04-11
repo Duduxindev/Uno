@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UNO Online</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/cards.css">
+    <link rel="stylesheet" href="css/menu.css">
+    <link rel="stylesheet" href="css/game.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Tela de Início -->
+    <div id="start-screen" class="screen active">
+        <div class="logo-container">
+            <h1 class="game-logo">UNO</h1>
+        </div>
+        <div class="menu-container">
+            <button id="create-game-btn" class="menu-btn">Criar Jogo</button>
+            <button id="join-game-btn" class="menu-btn">Entrar em Jogo</button>
+            <button id="options-btn" class="menu-btn">Opções</button>
+            <button id="rules-btn" class="menu-btn">Regras</button>
+        </div>
+    </div>
+
+    <!-- Tela de Criação de Jogo -->
+    <div id="create-game-screen" class="screen">
+        <h2>Criar Novo Jogo</h2>
+        <div class="form-container">
+            <div class="form-group">
+                <label for="player-name">Seu Nome:</label>
+                <input type="text" id="player-name" class="form-input" placeholder="Insira seu nome">
+            </div>
+            <div class="form-group">
+                <label for="game-mode">Modo de Jogo:</label>
+                <select id="game-mode" class="form-select">
+                    <option value="normal">Normal</option>
+                    <option value="wild">Wild</option>
+                    <option value="no-mercy">No Mercy</option>
+                    <option value="progressive">Progressive</option>
+                    <option value="seven-zero">Seven-Zero</option>
+                    <option value="custom">Personalizado</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="player-count">Número de Jogadores:</label>
+                <select id="player-count" class="form-select">
+                    <option value="2">2 Jogadores</option>
+                    <option value="3">3 Jogadores</option>
+                    <option value="4" selected>4 Jogadores</option>
+                    <option value="5">5 Jogadores</option>
+                    <option value="6">6 Jogadores</option>
+                    <option value="7">7 Jogadores</option>
+                    <option value="8">8 Jogadores</option>
+                </select>
+            </div>
+            <div id="custom-rules" class="form-group hidden">
+                <h3>Regras Personalizadas</h3>
+                <div class="custom-rule">
+                    <input type="checkbox" id="stacking" class="rule-checkbox">
+                    <label for="stacking">Empilhamento de +2/+4</label>
+                </div>
+                <div class="custom-rule">
+                    <input type="checkbox" id="jump-in" class="rule-checkbox">
+                    <label for="jump-in">Jump-In (Carta idêntica interrompe turno)</label>
+                </div>
+                <div class="custom-rule">
+                    <input type="checkbox" id="force-play" class="rule-checkbox">
+                    <label for="force-play">Jogar carta comprada quando possível</label>
+                </div>
+                <div class="custom-rule">
+                    <input type="checkbox" id="seven-trade" class="rule-checkbox">
+                    <label for="seven-trade">Sete = Trocar mãos</label>
+                </div>
+                <div class="custom-rule">
+                    <input type="checkbox" id="zero-rotate" class="rule-checkbox">
+                    <label for="zero-rotate">Zero = Rotacionar mãos</label>
+                </div>
+            </div>
+            <div class="buttons-row">
+                <button id="create-room-btn" class="primary-btn">Criar Sala</button>
+                <button id="back-from-create" class="secondary-btn">Voltar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Entrada em Jogo -->
+    <div id="join-game-screen" class="screen">
+        <h2>Entrar em um Jogo</h2>
+        <div class="form-container">
+            <div class="form-group">
+                <label for="room-code">Código da Sala:</label>
+                <input type="text" id="room-code" class="form-input" placeholder="Insira o código">
+            </div>
+            <div class="form-group">
+                <label for="join-player-name">Seu Nome:</label>
+                <input type="text" id="join-player-name" class="form-input" placeholder="Insira seu nome">
+            </div>
+            <div class="buttons-row">
+                <button id="join-room-btn" class="primary-btn">Entrar na Sala</button>
+                <button id="back-from-join" class="secondary-btn">Voltar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Sala de Espera -->
+    <div id="waiting-room-screen" class="screen">
+        <h2>Sala de Espera</h2>
+        <div class="room-info">
+            <p>Código da Sala: <span id="room-code-display" class="room-code">XXXX</span></p>
+            <p>Modo: <span id="room-mode-display">Normal</span></p>
+        </div>
+        <div class="players-container">
+            <h3>Jogadores</h3>
+            <ul id="players-list" class="players-list">
+                <!-- Jogadores serão adicionados dinamicamente -->
+            </ul>
+        </div>
+        <div class="buttons-row">
+            <button id="start-game-btn" class="primary-btn">Iniciar Jogo</button>
+            <button id="leave-room-btn" class="secondary-btn">Sair da Sala</button>
+        </div>
+    </div>
+
+    <!-- Tela de Jogo -->
+    <div id="game-screen" class="screen">
+        <div class="game-header">
+            <div class="game-info">
+                <span id="current-player">Vez de: Jogador 1</span>
+                <span id="cards-left">Cartas no monte: 87</span>
+            </div>
+            <div class="game-actions">
+                <button id="uno-btn" class="action-btn uno-btn">UNO!</button>
+                <button id="menu-btn" class="action-btn menu-btn">Menu</button>
+            </div>
+        </div>
+        
+        <div class="game-table">
+            <div class="opponents-container" id="opponents-container">
+                <!-- Oponentes serão adicionados dinamicamente -->
+            </div>
+            
+            <div class="center-area">
+                <div class="deck-area">
+                    <div id="draw-pile" class="card-pile draw-pile">
+                        <!-- Pilha de compra -->
+                    </div>
+                    <div id="discard-pile" class="card-pile discard-pile">
+                        <!-- Pilha de descarte -->
+                    </div>
+                </div>
+                <div id="game-messages" class="game-messages">
+                    <!-- Mensagens do jogo -->
+                </div>
+            </div>
+            
+            <div class="player-hand-container">
+                <div class="player-info">
+                    <span id="player-name-display">Você</span>
+                    <span id="card-count">7 cartas</span>
+                </div>
+                <div id="player-hand" class="player-hand">
+                    <!-- As cartas do jogador serão adicionadas aqui -->
+                </div>
+            </div>
+        </div>
+        
+        <div id="color-selector" class="color-selector hidden">
+            <h3>Escolha uma cor:</h3>
+            <div class="color-options">
+                <button class="color-btn red" data-color="red"></button>
+                <button class="color-btn blue" data-color="blue"></button>
+                <button class="color-btn green" data-color="green"></button>
+                <button class="color-btn yellow" data-color="yellow"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Regras -->
+    <div id="rules-screen" class="screen">
+        <h2>Regras do UNO</h2>
+        <div class="rules-content">
+            <h3>Regras Básicas</h3>
+            <p>O objetivo do UNO é ser o primeiro jogador a se livrar de todas as cartas.</p>
+            <p>Cada jogador recebe 7 cartas no início. O restante forma o monte de compras.</p>
+            <p>A primeira carta do monte é virada para iniciar a pilha de descarte.</p>
+            <p>Os jogadores devem jogar uma carta que combine com a cor, número ou símbolo da carta no topo da pilha de descarte.</p>
+            <p>Se não tiver uma carta compatível, o jogador deve comprar uma carta do monte. Se a carta comprada for jogável, ela pode ser jogada imediatamente.</p>
+            <p>Quando um jogador ficar com apenas uma carta, deve dizer "UNO!". Se não disser e for pego por outro jogador, deve comprar 2 cartas.</p>
+            
+            <h3>Cartas Especiais</h3>
+            <ul>
+                <li><strong>Pular (Skip):</strong> O próximo jogador perde a vez.</li>
+                <li><strong>Inverter (Reverse):</strong> Inverte a direção do jogo.</li>
+                <li><strong>+2:</strong> O próximo jogador compra 2 cartas e perde a vez.</li>
+                <li><strong>Curinga (Wild):</strong> Permite escolher a cor que continuará o jogo.</li>
+                <li><strong>Curinga +4 (Wild Draw Four):</strong> Permite escolher a cor e o próximo jogador compra 4 cartas e perde a vez.</li>
+            </ul>
+            
+            <h3>Modos de Jogo</h3>
+            <ul>
+                <li><strong>Normal:</strong> Regras padrão do UNO.</li>
+                <li><strong>Wild:</strong> Mais cartas especiais no baralho.</li>
+                <li><strong>No Mercy:</strong> Sem limitações para cartas +2 e +4, possibilitando grandes sequências.</li>
+                <li><strong>Progressive:</strong> Cartas +2 e +4 podem ser empilhadas, acumulando o efeito.</li>
+                <li><strong>Seven-Zero:</strong> A carta 7 faz trocar mãos com outro jogador e a carta 0 faz todos os jogadores passarem suas mãos.</li>
+            </ul>
+        </div>
+        <button id="back-from-rules" class="secondary-btn">Voltar</button>
+    </div>
+
+    <!-- Tela de Opções -->
+    <div id="options-screen" class="screen">
+        <h2>Opções</h2>
+        <div class="options-container">
+            <div class="option-group">
+                <h3>Sons</h3>
+                <div class="option-item">
+                    <label for="sound-effects">Efeitos Sonoros</label>
+                    <label class="switch">
+                        <input type="checkbox" id="sound-effects" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="option-item">
+                    <label for="background-music">Música de Fundo</label>
+                    <label class="switch">
+                        <input type="checkbox" id="background-music" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="option-group">
+                <h3>Visual</h3>
+                <div class="option-item">
+                    <label for="card-animation">Animações de Cartas</label>
+                    <label class="switch">
+                        <input type="checkbox" id="card-animation" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="option-item">
+                    <label for="dark-mode">Modo Escuro</label>
+                    <label class="switch">
+                        <input type="checkbox" id="dark-mode">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="option-group">
+                <h3>Jogabilidade</h3>
+                <div class="option-item">
+                    <label for="auto-uno">UNO Automático</label>
+                    <label class="switch">
+                        <input type="checkbox" id="auto-uno">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="option-item">
+                    <label for="turn-timer">Temporizador de Turnos</label>
+                    <label class="switch">
+                        <input type="checkbox" id="turn-timer" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <button id="back-from-options" class="secondary-btn">Voltar</button>
+    </div>
+
+    <!-- Tela de Fim de Jogo -->
+    <div id="game-over-screen" class="screen">
+        <h2>Fim de Jogo!</h2>
+        <div class="winner-info">
+            <h3>Vencedor:</h3>
+            <div id="winner-display" class="winner-display">
+                <span id="winner-name">Jogador 1</span>
+            </div>
+        </div>
+        <div class="game-stats">
+            <h3>Estatísticas</h3>
+            <div id="game-stats-container" class="stats-container">
+                <!-- Estatísticas do jogo serão adicionadas aqui -->
+            </div>
+        </div>
+        <div class="buttons-row">
+            <button id="play-again-btn" class="primary-btn">Jogar Novamente</button>
+            <button id="return-main-btn" class="secondary-btn">Menu Principal</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/storage.js"></script>
+    <script src="js/cards.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/modes.js"></script>
+    <script src="js/room.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

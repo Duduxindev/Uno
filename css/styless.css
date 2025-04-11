@@ -1,0 +1,238 @@
+:root {
+    --primary-color: #e81e24;
+    --secondary-color: #0099cc;
+    --background-color: #f5f5f5;
+    --background-dark: #121212;
+    --text-color: #333333;
+    --text-dark: #f5f5f5;
+    --accent-color: #ffcc00;
+    --card-red: #e81e24;
+    --card-blue: #0099cc;
+    --card-green: #00aa55;
+    --card-yellow: #ffcc00;
+    --card-black: #000000;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-strong: 0 8px 16px rgba(0, 0, 0, 0.2);
+    --radius: 12px;
+    --transition: all 0.3s ease;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: var(--transition);
+    overflow-x: hidden;
+}
+
+body.dark-mode {
+    background-color: var(--background-dark);
+    color: var(--text-dark);
+}
+
+.screen {
+    display: none;
+    width: 100%;
+    min-height: 100vh;
+    padding: 2rem;
+}
+
+.screen.active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+h1, h2, h3, h4 {
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+.game-logo {
+    font-size: 5rem;
+    font-weight: 800;
+    color: var(--primary-color);
+    text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    letter-spacing: 0.1em;
+    margin-bottom: 2rem;
+    transform: rotate(-5deg);
+    transition: transform 0.3s ease;
+}
+
+.game-logo:hover {
+    transform: rotate(0deg) scale(1.05);
+}
+
+.menu-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    max-width: 400px;
+}
+
+.menu-btn {
+    padding: 1rem 2rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow);
+}
+
+.menu-btn:hover {
+    background-color: #c41a1f;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-strong);
+}
+
+.form-container {
+    width: 100%;
+    max-width: 500px;
+    padding: 2rem;
+    background-color: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.dark-mode .form-container {
+    background-color: #2d2d2d;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.form-input, .form-select {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: var(--radius);
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.form-input:focus, .form-select:focus {
+    border-color: var(--secondary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 153, 204, 0.2);
+}
+
+.dark-mode .form-input, .dark-mode .form-select {
+    background-color: #3d3d3d;
+    border-color: #555;
+    color: #fff;
+}
+
+.buttons-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.primary-btn, .secondary-btn {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: var(--radius);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.primary-btn {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.primary-btn:hover {
+    background-color: #c41a1f;
+}
+
+.secondary-btn {
+    background-color: #e2e2e2;
+    color: #333;
+}
+
+.dark-mode .secondary-btn {
+    background-color: #454545;
+    color: #f0f0f0;
+}
+
+.secondary-btn:hover {
+    background-color: #d1d1d1;
+}
+
+.dark-mode .secondary-btn:hover {
+    background-color: #555;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.custom-rule {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.rule-checkbox {
+    margin-right: 0.75rem;
+    width: 18px;
+    height: 18px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .game-logo {
+        font-size: 4rem;
+    }
+    
+    .screen {
+        padding: 1rem;
+    }
+    
+    .form-container {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .game-logo {
+        font-size: 3rem;
+    }
+    
+    .menu-btn {
+        padding: 0.8rem 1.5rem;
+        font-size: 1rem;
+    }
+    
+    .buttons-row {
+        flex-direction: column;
+    }
+    
+    .primary-btn, .secondary-btn {
+        width: 100%;
+    }
+}
