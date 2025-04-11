@@ -9,19 +9,102 @@
     <link rel="stylesheet" href="css/cards-fixed.css">
     <link rel="stylesheet" href="css/game.css">
     <link rel="stylesheet" href="css/menu.css">
-    <link rel="stylesheet" href="css/cards-visibility-fix.css">
     <link rel="stylesheet" href="css/chat.css">
     <link rel="stylesheet" href="css/uno-master-fix.css">
+    <link rel="stylesheet" href="css/emergency-fix.css">
+    <link rel="stylesheet" href="css/cards-visibility-fix.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK Modular (versão 9) -->
+    <script type="module">
+        // Import do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue, push, remove, update, get } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-database.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
+        
+        // Configuração atualizada
+        const firebaseConfig = {
+            apiKey: "AIzaSyBlYzl1Kzd5pY0gZYRghsrGkbCfLm6iTqk",
+            authDomain: "uno-game-duduxindev.firebaseapp.com",
+            databaseURL: "https://uno-game-duduxindev-default-rtdb.firebaseio.com",
+            projectId: "uno-game-duduxindev",
+            storageBucket: "uno-game-duduxindev.firebasestorage.app",
+            messagingSenderId: "1020680045987",
+            appId: "1:1020680045987:web:f8e762882f180fd6b9c616",
+            measurementId: "G-HYKE1R16G5"
+        };
+        
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+        
+        // Expor para scripts não modulares
+        window.firebaseApp = app;
+        window.firebaseDb = db;
+        window.firebaseAuth = auth;
+        
+        // Utilitários do Firebase
+        window.FirebaseUtil = {
+            generateRoomCode: function() {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                let code = '';
+                for (let i = 0; i < 4; i++) {
+                    code += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                return code;
+            },
+            
+            getRoomRef: function(roomCode) {
+                return ref(db, `rooms/${roomCode}`);
+            },
+            
+            checkRoomExists: async function(roomCode) {
+                try {
+                    const snapshot = await get(ref(db, `rooms/${roomCode}`));
+                    return snapshot.exists();
+                } catch (error) {
+                    console.error("Erro ao verificar sala:", error);
+                    return false;
+                }
+            },
+            
+            getServerTimestamp: function() {
+                return firebase.database.ServerValue.TIMESTAMP;
+            }
+        };
+        
+        console.log("✅ Firebase Modular inicializado com sucesso!");
+    </script>
+    
+    <!-- Firebase compat para compatibilidade com código existente -->
     <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
+    
+    <script>
+        // Inicializar API de compatibilidade
+        firebase.initializeApp({
+            apiKey: "AIzaSyBlYzl1Kzd5pY0gZYRghsrGkbCfLm6iTqk",
+            authDomain: "uno-game-duduxindev.firebaseapp.com",
+            databaseURL: "https://uno-game-duduxindev-default-rtdb.firebaseio.com",
+            projectId: "uno-game-duduxindev",
+            storageBucket: "uno-game-duduxindev.firebasestorage.app",
+            messagingSenderId: "1020680045987",
+            appId: "1:1020680045987:web:f8e762882f180fd6b9c616",
+            measurementId: "G-HYKE1R16G5"
+        });
+        
+        console.log("✅ Firebase Compat inicializado com sucesso!");
+    </script>
 </head>
 <body>
+    <script>
+    console.log("🚨 Aplicando correção emergencial...");
+    </script>
+    
     <!-- Tela de Início -->
     <div id="start-screen" class="screen active">
         <div class="logo-container">
@@ -43,7 +126,7 @@
             </button>
         </div>
         <div class="version-info">
-            v2.0.0 - Atualizado em 2025-04-11 21:23:07<br>
+            v2.0.0 - Atualizado em 2025-04-11 21:35:13<br>
             Desenvolvido por Duduxindev
         </div>
     </div>
@@ -517,7 +600,7 @@
     <!-- Notificação Toast -->
     <div id="toast" class="toast"></div>
 
-    <!-- Firebase Configuration and App Scripts -->
+    <!-- Scripts de aplicação -->
     <script src="js/firebase-config.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/player.js"></script>
@@ -531,12 +614,12 @@
     <script src="js/ui.js"></script>
     <script src="js/app.js"></script>
     <script src="js/uno-master-fix.js"></script>
-    <script src="js/cards-fix.js"></script>
-    <script src="js/firebase-fix.js"></script>
+    <script src="js/firebase-direct-fix.js"></script>
+    <script src="js/cards-direct-fix.js"></script>
     
     <!-- Script para inicialização - Garante funcionamento dos botões -->
     <script>
-        console.log("Inicializando aplicação UNO em: 2025-04-11 21:23:07");
+        console.log("Inicializando aplicação UNO em: 2025-04-11 21:35:13");
         
         // Verificar se todos os scripts foram carregados corretamente
         document.addEventListener('DOMContentLoaded', function() {
@@ -564,7 +647,26 @@
                     document.body.appendChild(script);
                 }
                 
-                console.log("🎮 UNO Game - Correções carregadas em: 2025-04-11 21:23:07");
+                // Verificar Firebase
+                if (typeof firebase === 'undefined' || typeof FirebaseUtil === 'undefined') {
+                    console.error("❌ Firebase ainda não está disponível! Recarregando página...");
+                    alert("Problemas com a conexão Firebase. A página será recarregada automaticamente.");
+                    location.reload();
+                }
+                
+                // Verificar cartas quando na tela de jogo
+                const gameScreen = document.getElementById('game-screen');
+                if (gameScreen && gameScreen.classList.contains('active')) {
+                    const playerHand = document.getElementById('player-hand');
+                    if (!playerHand || playerHand.children.length === 0) {
+                        console.log("🃏 Forçando geração de cartas...");
+                        if (typeof forceCardGeneration === 'function') {
+                            forceCardGeneration();
+                        }
+                    }
+                }
+                
+                console.log("🎮 UNO Game - Correções carregadas em: 2025-04-11 21:35:13");
             }, 2000);
         });
     </script>
@@ -674,5 +776,107 @@
             background-color: rgba(33, 150, 243, 0.1);
         }
     </style>
+    
+    <!-- Correções emergenciais -->
+    <script>
+    console.log("🔄 Carga completa, verificando estado final...");
+    setTimeout(function() {
+        // Verificar Firebase
+        if (typeof firebase === 'undefined' || typeof FirebaseUtil === 'undefined') {
+            console.error("❌ Firebase ainda não está disponível após verificação final!");
+            
+            // Recriar objeto FirebaseUtil como garantia
+            window.FirebaseUtil = {
+                generateRoomCode: function() {
+                    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                    let code = '';
+                    for (let i = 0; i < 4; i++) {
+                        code += chars.charAt(Math.floor(Math.random() * chars.length));
+                    }
+                    return code;
+                },
+                
+                getRoomRef: function(roomCode) {
+                    return firebase ? firebase.database().ref(`rooms/${roomCode}`) : null;
+                },
+                
+                checkRoomExists: async function(roomCode) {
+                    try {
+                        if (!firebase) return false;
+                        const snapshot = await firebase.database().ref(`rooms/${roomCode}`).once('value');
+                        return snapshot.exists();
+                    } catch (error) {
+                        console.error("Erro ao verificar sala:", error);
+                        return false;
+                    }
+                },
+                
+                getServerTimestamp: function() {
+                    return firebase && firebase.database ? firebase.database.ServerValue.TIMESTAMP : Date.now();
+                }
+            };
+        }
+        
+        // Verificar cartas quando na tela de jogo
+        const gameScreen = document.getElementById('game-screen');
+        if (gameScreen && gameScreen.classList.contains('active')) {
+            const playerHand = document.getElementById('player-hand');
+            if (!playerHand || playerHand.children.length === 0) {
+                console.log("🃏 Verificação final: gerando cartas manualmente");
+                
+                // Função emergencial para gerar cartas
+                function emergencyCardGeneration() {
+                    const playerHand = document.getElementById('player-hand');
+                    if (!playerHand) return;
+                    
+                    // Limpar mão atual
+                    playerHand.innerHTML = '';
+                    
+                    // Cores e valores
+                    const colors = ['red', 'blue', 'green', 'yellow'];
+                    const values = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'skip', 'reverse', 'draw2'];
+                    
+                    // Gerar 7 cartas
+                    for (let i = 0; i < 7; i++) {
+                        const color = colors[Math.floor(Math.random() * colors.length)];
+                        const value = values[Math.floor(Math.random() * values.length)];
+                        
+                        // Criar carta
+                        const card = document.createElement('div');
+                        card.className = `card ${color}`;
+                        card.style.display = 'block';
+                        card.style.width = '120px';
+                        card.style.height = '180px';
+                        card.style.backgroundColor = (color === 'red') ? '#f44336' : 
+                                                    (color === 'blue') ? '#2196F3' : 
+                                                    (color === 'green') ? '#4CAF50' : 
+                                                    '#FFC107';
+                        card.style.color = (color === 'yellow') ? 'black' : 'white';
+                        card.style.borderRadius = '10px';
+                        card.style.margin = '0 -15px';
+                        card.style.position = 'relative';
+                        card.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                        
+                        card.innerHTML = `
+                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 36px; font-weight: bold;">
+                                ${value}
+                            </div>
+                        `;
+                        
+                        playerHand.appendChild(card);
+                    }
+                    
+                    // Atualizar contador
+                    const cardCounter = document.getElementById('card-count');
+                    if (cardCounter) {
+                        cardCounter.textContent = '7 cartas';
+                    }
+                }
+                
+                emergencyCardGeneration();
+            }
+        }
+    }, 3000);
+    </script>
 </body>
 </html>
