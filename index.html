@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="css/game.css">
     <link rel="stylesheet" href="css/menu.css">
     <link rel="stylesheet" href="css/chat.css">
+    <link rel="stylesheet" href="css/emergency-fix.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -41,7 +42,7 @@
             </button>
         </div>
         <div class="version-info">
-            v2.0.0 - Atualizado em 2025-04-11 20:02:19<br>
+            v2.0.0 - Atualizado em 2025-04-11 20:12:04<br>
             Desenvolvido por Duduxindev
         </div>
     </div>
@@ -528,6 +529,7 @@
     <script src="js/ai-player.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/emergency-fix.js"></script>
     
     <!-- Script para inicialização - Garante funcionamento dos botões -->
     <script>
@@ -598,19 +600,15 @@
                 }, 1500);
             }
             
-            // Executar inicialização dos componentes
-            if (window.gameInitializer) {
-                console.log("Componentes já inicializados");
-            } else {
-                console.log("Iniciando componentes do jogo...");
-                setTimeout(() => {
-                    if (typeof GameInitializer === 'function') {
-                        window.gameInitializer = new GameInitializer();
-                    } else {
-                        console.error("GameInitializer não encontrado!");
-                    }
-                }, 500);
-            }
+            // Forçar inicialização imediata da correção
+            setTimeout(function() {
+                if (!window.directCardRenderer) {
+                    console.log("⚠️ Correção não iniciada, forçando inicialização");
+                    const scriptElement = document.createElement('script');
+                    scriptElement.src = 'js/emergency-fix.js?t=' + Date.now();
+                    document.body.appendChild(scriptElement);
+                }
+            }, 1000);
         });
     </script>
 
