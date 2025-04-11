@@ -1,0 +1,236 @@
+/**
+ * Correções Finais para UNO Game
+ * Data: 2025-04-11 20:35:06
+ * Desenvolvido por: Duduxindev
+ */
+
+/* Melhorias para a mão do jogador */
+.player-hand {
+    min-height: 220px;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    position: relative;
+}
+
+.player-hand .card {
+    margin: 0 -15px;
+    transition: transform 0.3s ease, margin 0.3s ease, box-shadow 0.3s ease;
+}
+
+.player-hand .card:hover {
+    transform: translateY(-20px);
+    margin: 0 5px;
+    z-index: 100;
+}
+
+/* Animação de entrada das cartas */
+.card.in-hand {
+    animation: card-enter 0.5s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes card-enter {
+    from {
+        opacity: 0;
+        transform: translateY(100px) scale(0.5);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Efeito para cartas jogáveis */
+.card.playable {
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.8);
+    animation: playable-pulse 2s infinite;
+}
+
+@keyframes playable-pulse {
+    0% { box-shadow: 0 0 15px rgba(76, 175, 80, 0.5); }
+    50% { box-shadow: 0 0 20px rgba(76, 175, 80, 0.8); }
+    100% { box-shadow: 0 0 15px rgba(76, 175, 80, 0.5); }
+}
+
+.card.playable:hover {
+    box-shadow: 0 0 20px rgba(76, 175, 80, 1);
+}
+
+/* Indicador de carta jogável */
+.playable-indicator {
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #4CAF50;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 10px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 5;
+}
+
+.card.playable:hover .playable-indicator {
+    opacity: 1;
+}
+
+/* Melhorias para mensagens do jogo */
+.game-messages {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+    z-index: 100;
+}
+
+.game-message {
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.3s, transform 0.3s;
+    max-width: 80%;
+    text-align: center;
+}
+
+.game-message.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.game-message.hide {
+    opacity: 0;
+    transform: translateY(-20px);
+}
+
+/* Destaque para o turno atual */
+.your-turn {
+    color: #E5312A;
+    font-weight: bold;
+    animation: pulse-text 1.5s infinite;
+    font-size: 1.2em;
+}
+
+@keyframes pulse-text {
+    0% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+    100% { opacity: 0.8; transform: scale(1); }
+}
+
+/* Otimizações para o seletor de cores */
+.color-selector {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.95);
+    padding: 20px 30px;
+    border-radius: 15px;
+    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    text-align: center;
+    animation: appear 0.3s forwards;
+}
+
+.dark-mode .color-selector {
+    background: rgba(45, 45, 45, 0.95);
+    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes appear {
+    from { 
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0; 
+    }
+    to { 
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1; 
+    }
+}
+
+.color-selector h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 18px;
+}
+
+.color-options {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.color-btn {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.color-btn:hover {
+    transform: scale(1.15);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.color-btn:active {
+    transform: scale(0.95);
+}
+
+.color-btn.red {
+    background: linear-gradient(135deg, #E5312A 0%, #FF5252 100%);
+}
+
+.color-btn.blue {
+    background: linear-gradient(135deg, #2980B9 0%, #39ADFF 100%);
+}
+
+.color-btn.green {
+    background: linear-gradient(135deg, #27AE60 0%, #33DD88 100%);
+}
+
+.color-btn.yellow {
+    background: linear-gradient(135deg, #F1C40F 0%, #FFDD55 100%);
+}
+
+/* Melhoria para oponentes */
+.opponent {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.opponent.current-player {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(232, 49, 42, 0.4);
+    border: 2px solid #E5312A;
+}
+
+.opponent.current-player::after {
+    content: 'Jogando...';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #E5312A;
+    color: white;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    animation: pulse 1.5s infinite;
+}
