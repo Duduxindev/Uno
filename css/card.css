@@ -1,29 +1,34 @@
+/* Estilos modernos para as cartas do UNO */
 .card {
     position: relative;
     width: 120px;
     height: 180px;
-    border-radius: 10px;
+    border-radius: 12px;
     background-color: white;
-    box-shadow: var(--shadow);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: var(--shadow-md);
+    transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+                box-shadow 0.3s ease, 
+                filter 0.3s ease;
     cursor: pointer;
     overflow: hidden;
     user-select: none;
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    backface-visibility: hidden;
 }
 
 .card:hover {
-    transform: translateY(-10px);
-    box-shadow: var(--shadow-strong);
+    transform: translateY(-15px) rotateY(5deg);
+    box-shadow: var(--shadow-lg), 0 0 15px rgba(var(--primary-color-rgb), 0.2);
+    z-index: 10;
 }
 
 .card.disabled {
-    opacity: 0.7;
+    opacity: 0.6;
+    filter: grayscale(50%);
     cursor: not-allowed;
-}
-
-.card.disabled:hover {
-    transform: none;
-    box-shadow: var(--shadow);
+    transform: none !important;
+    box-shadow: var(--shadow) !important;
 }
 
 .card-inner {
@@ -34,125 +39,266 @@
     align-items: center;
     justify-content: center;
     border-radius: 8px;
-    border: 5px solid white;
+    border: 6px solid white;
+    position: relative;
+    overflow: hidden;
+}
+
+.card-inner:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 70% 30%, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 60%);
+    pointer-events: none;
 }
 
 .card.red .card-inner {
-    background-color: var(--card-red);
+    background: linear-gradient(135deg, var(--card-red) 0%, #ff5252 100%);
 }
 
 .card.blue .card-inner {
-    background-color: var(--card-blue);
+    background: linear-gradient(135deg, var(--card-blue) 0%, #59c2ff 100%);
 }
 
 .card.green .card-inner {
-    background-color: var(--card-green);
+    background: linear-gradient(135deg, var(--card-green) 0%, #4cda8d 100%);
 }
 
 .card.yellow .card-inner {
-    background-color: var(--card-yellow);
+    background: linear-gradient(135deg, var(--card-yellow) 0%, #ffe066 100%);
 }
 
 .card.black .card-inner {
-    background-color: var(--card-black);
+    background: linear-gradient(135deg, var(--card-black) 0%, #333333 100%);
 }
 
 .card-value {
-    font-size: 3rem;
-    font-weight: 700;
+    font-size: 3.5rem;
+    font-weight: var(--font-weight-extrabold);
     color: white;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 2;
 }
 
 .card-symbol {
-    font-size: 2.5rem;
-    margin-top: 0.5rem;
+    font-size: 2.8rem;
+    margin-top: 0.3rem;
     color: white;
+    text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 2;
+}
+
+/* Efeitos de brilho e reflexo */
+.card:after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        to bottom right,
+        rgba(255, 255, 255, 0.1) 0%,
+        rgba(255, 255, 255, 0.075) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    transform: rotate(30deg);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.card:hover:after {
+    opacity: 1;
 }
 
 .card-back {
-    background: linear-gradient(135deg, var(--primary-color) 0%, #aa1111 100%);
+    background: linear-gradient(135deg, #d81920 0%, #ab1015 100%);
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.card-back:before {
+    content: '';
+    position: absolute;
+    width: 180%;
+    height: 180%;
+    border-radius: 50%;
+    background: radial-gradient(
+        ellipse at center,
+        rgba(255, 255, 255, 0.2) 0%,
+        rgba(255, 255, 255, 0) 70%
+    );
+    top: -40%;
+    left: -40%;
+    pointer-events: none;
+}
+
+.card-back:after {
+    content: '';
+    position: absolute;
+    width: 90%;
+    height: 90%;
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    top: 5%;
+    left: 5%;
+    pointer-events: none;
 }
 
 .card-back-logo {
-    font-size: 2.5rem;
-    font-weight: 800;
+    font-size: 2.8rem;
+    font-weight: var(--font-weight-extrabold);
     color: white;
-    text-shadow: 2px 2px 0 #000;
+    text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
     transform: rotate(-25deg);
+    letter-spacing: 0.05em;
+    position: relative;
+    z-index: 2;
 }
 
-/* Cartas especiais */
+.card-back-pattern {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 20%),
+        repeating-linear-gradient(45deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 2px, transparent 2px, transparent 4px);
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* Cartas especiais com efeitos mais elaborados */
 .card.wild .card-inner {
     background: linear-gradient(
         135deg, 
-        var(--card-red) 0%, 
-        var(--card-blue) 33%, 
-        var(--card-yellow) 66%, 
-        var(--card-green) 100%
+        #e81e24 0%, 
+        #0088cc 25%, 
+        #ffcc00 50%, 
+        #00aa55 75%, 
+        #e81e24 100%
     );
+    background-size: 400% 400%;
+    animation: gradientShift 5s ease infinite;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 .card.wild-draw-four .card-inner {
     background: linear-gradient(
         135deg, 
-        var(--card-red) 0%, 
-        var(--card-blue) 33%, 
-        var(--card-yellow) 66%, 
-        var(--card-green) 100%
+        #e81e24 0%, 
+        #0088cc 25%, 
+        #ffcc00 50%, 
+        #00aa55 75%, 
+        #e81e24 100%
     );
+    background-size: 400% 400%;
+    animation: gradientShift 5s ease infinite, pulseGlow 2s infinite;
+}
+
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
 }
 
 .card-pile {
     position: relative;
     width: 120px;
     height: 180px;
-    border-radius: 10px;
+    border-radius: 12px;
+    perspective: 1000px;
 }
 
 .draw-pile .card, .discard-pile .card {
     position: absolute;
     top: 0;
     left: 0;
+    box-shadow: var(--shadow);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .draw-pile .card:nth-child(1) {
-    transform: rotate(1deg);
+    transform: rotate(2deg) translateZ(0px);
 }
 
 .draw-pile .card:nth-child(2) {
-    transform: rotate(-1deg);
+    transform: rotate(-1deg) translateZ(-2px);
 }
 
 .draw-pile .card:nth-child(3) {
-    transform: rotate(2deg);
+    transform: rotate(0deg) translateZ(-4px);
+}
+
+.draw-pile:hover .card {
+    box-shadow: var(--shadow-lg);
+}
+
+.draw-pile:hover .card:nth-child(1) {
+    transform: rotate(3deg) translateZ(2px);
+}
+
+.draw-pile:hover .card:nth-child(2) {
+    transform: rotate(-2deg) translateZ(0px);
+}
+
+.draw-pile:hover .card:nth-child(3) {
+    transform: rotate(1deg) translateZ(-2px);
 }
 
 .discard-pile .card {
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 /* Animações para cartas jogadas */
 @keyframes cardPlayed {
     0% {
-        transform: scale(1) rotate(0);
+        transform: scale(1) translateY(0) rotate(0);
         opacity: 1;
     }
-    50% {
-        transform: scale(1.2) rotate(5deg);
+    30% {
+        transform: scale(1.2) translateY(-30px) rotate(5deg);
         opacity: 1;
     }
     100% {
-        transform: scale(1) rotate(0);
+        transform: scale(1) translateY(0) rotate(0);
         opacity: 1;
     }
 }
 
 .card-played {
-    animation: cardPlayed 0.5s ease;
+    animation: cardPlayed 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Animação para cartas compradas */
+@keyframes cardDrawn {
+    0% {
+        transform: translateY(-20px) scale(0.95);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+.card-drawn {
+    animation: cardDrawn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 /* Cartas na mão do jogador */
@@ -161,26 +307,62 @@
     justify-content: center;
     flex-wrap: wrap;
     gap: 0.5rem;
-    padding: 1rem;
+    padding: var(--spacing);
     max-width: 100%;
     overflow-x: auto;
+    position: relative;
+    perspective: 800px;
+}
+
+.player-hand::-webkit-scrollbar {
+    height: 8px;
+}
+
+.player-hand::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: var(--radius-full);
+}
+
+.player-hand::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-full);
 }
 
 .player-hand .card {
     margin: 0 -15px;
-    transition: transform 0.2s ease, margin 0.2s ease;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), margin 0.3s ease, box-shadow 0.3s ease;
+    transform-origin: bottom center;
 }
 
 .player-hand .card:hover {
-    transform: translateY(-20px);
-    margin: 0 0;
+    transform: translateY(-25px) scale(1.05);
+    margin: 0 5px;
     z-index: 10;
+}
+
+/* Fan effect para cartas na mão */
+.player-hand.fan-effect .card {
+    transform-origin: bottom center;
+}
+
+.player-hand.fan-effect .card:nth-child(odd) {
+    transform: rotate(-1deg);
+}
+
+.player-hand.fan-effect .card:nth-child(even) {
+    transform: rotate(1deg);
+}
+
+.player-hand.fan-effect .card:hover {
+    transform: translateY(-25px) scale(1.05) rotate(0);
 }
 
 /* Cartas dos oponentes (viradas) */
 .opponent-hand {
     display: flex;
     justify-content: center;
+    position: relative;
+    perspective: 800px;
 }
 
 .opponent-hand .card {
@@ -188,10 +370,31 @@
     height: 135px;
     margin: 0 -10px;
     transform: none;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
 }
 
 .opponent-hand .card:hover {
-    transform: none;
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-md);
+    z-index: 5;
+}
+
+/* Fan effect para cartas do oponente */
+.opponent-hand.fan-effect .card {
+    transform-origin: bottom center;
+}
+
+.opponent-hand.fan-effect .card:nth-child(odd) {
+    transform: rotate(-2deg);
+}
+
+.opponent-hand.fan-effect .card:nth-child(even) {
+    transform: rotate(2deg);
+}
+
+.opponent-hand.fan-effect .card:hover {
+    transform: translateY(-5px) rotate(0);
 }
 
 /* Seletor de cores */
@@ -201,56 +404,125 @@
     left: 50%;
     transform: translate(-50%, -50%);
     background-color: white;
-    border-radius: var(--radius);
-    padding: 2rem;
-    box-shadow: var(--shadow-strong);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-lg), 0 0 30px rgba(0, 0, 0, 0.2);
     z-index: 100;
     display: flex;
     flex-direction: column;
     align-items: center;
+    animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes scaleIn {
+    from { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
+    to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 }
 
 .dark-mode .color-selector {
     background-color: #2d2d2d;
+    box-shadow: var(--shadow-lg), 0 0 30px rgba(0, 0, 0, 0.4);
+}
+
+.color-selector h3 {
+    margin-bottom: var(--spacing-md);
+    color: var(--text-color);
+    text-align: center;
+}
+
+.dark-mode .color-selector h3 {
+    color: var(--text-light);
 }
 
 .color-options {
     display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
+    gap: var(--spacing);
+    margin-top: var(--spacing);
+    perspective: 500px;
 }
 
 .color-btn {
-    width: 70px;
-    height: 70px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
     border: none;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+    box-shadow: var(--shadow-md);
+    position: relative;
+    overflow: hidden;
+}
+
+.color-btn:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 60%);
+    opacity: 0.7;
 }
 
 .color-btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.15) translateZ(20px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.color-btn:active {
+    transform: scale(1.05);
 }
 
 .color-btn.red {
-    background-color: var(--card-red);
+    background: linear-gradient(135deg, var(--card-red) 0%, #ff5252 100%);
 }
 
 .color-btn.blue {
-    background-color: var(--card-blue);
+    background: linear-gradient(135deg, var(--card-blue) 0%, #59c2ff 100%);
 }
 
 .color-btn.green {
-    background-color: var(--card-green);
+    background: linear-gradient(135deg, var(--card-green) 0%, #4cda8d 100%);
 }
 
 .color-btn.yellow {
-    background-color: var(--card-yellow);
+    background: linear-gradient(135deg, var(--card-yellow) 0%, #ffe066 100%);
+}
+
+/* UNO call animation */
+.uno-effect {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 6rem;
+    font-weight: var(--font-weight-extrabold);
+    color: var(--primary-color);
+    text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    z-index: 200;
+    pointer-events: none;
+    animation: unoCall 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes unoCall {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+    20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+    80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
 }
 
 /* Adaptação para telas menores */
+@media (max-width: 992px) {
+    .color-btn {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .uno-effect {
+        font-size: 5rem;
+    }
+}
+
 @media (max-width: 768px) {
     .card {
         width: 100px;
@@ -258,12 +530,25 @@
     }
     
     .card-value {
-        font-size: 2.5rem;
+        font-size: 2.8rem;
+    }
+    
+    .card-symbol {
+        font-size: 2.3rem;
     }
     
     .opponent-hand .card {
-        width: 70px;
-        height: 105px;
+        width: 75px;
+        height: 112px;
+    }
+    
+    .color-btn {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .uno-effect {
+        font-size: 4rem;
     }
 }
 
@@ -274,7 +559,7 @@
     }
     
     .card-value {
-        font-size: 2rem;
+        font-size: 2.2rem;
     }
     
     .card-symbol {
@@ -291,8 +576,16 @@
         margin: 0 -10px;
     }
     
+    .player-hand .card:hover {
+        margin: 0 0;
+    }
+    
     .color-btn {
         width: 50px;
         height: 50px;
+    }
+    
+    .uno-effect {
+        font-size: 3.5rem;
     }
 }
