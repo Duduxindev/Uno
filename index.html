@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UNO Online - Duduxindev</title>
+    <!-- Carregando estilos -->
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/cards.css">
-    <link rel="stylesheet" href="css/menu.css">
     <link rel="stylesheet" href="css/game.css">
+    <link rel="stylesheet" href="css/menu.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -39,7 +40,7 @@
             </button>
         </div>
         <div class="version-info">
-            v1.0.0 - Atualizado em 11/04/2025 16:21:47<br>
+            v1.0.0 - Atualizado em 11/04/2025 16:54:02<br>
             Desenvolvido por Duduxindev
         </div>
     </div>
@@ -415,5 +416,101 @@
     <script src="js/game.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/app.js"></script>
+    
+    <!-- Script para inicialização - Garante funcionamento dos botões -->
+    <script>
+        console.log("Inicializando aplicação UNO em: " + new Date().toISOString());
+        
+        // Verificar se todos os scripts foram carregados corretamente
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM carregado completamente");
+            
+            // Verificar se as principais classes estão definidas
+            const classesCheck = [
+                {name: 'RoomManager', obj: window.RoomManager},
+                {name: 'UnoCard', obj: window.UnoCard}, 
+                {name: 'UnoDeck', obj: window.UnoDeck},
+                {name: 'Player', obj: window.Player},
+                {name: 'GameMode', obj: window.GameMode},
+                {name: 'UnoGame', obj: window.UnoGame},
+                {name: 'GameStorage', obj: window.GameStorage}
+            ];
+            
+            const missingClasses = classesCheck.filter(c => typeof c.obj !== 'function');
+            
+            if (missingClasses.length > 0) {
+                console.error("ERRO: As seguintes classes não foram carregadas:", 
+                    missingClasses.map(c => c.name).join(', '));
+            } else {
+                console.log("Todas as classes necessárias foram carregadas com sucesso");
+            }
+            
+            // Verificar Firebase
+            if (typeof firebase === 'undefined') {
+                console.error("ERRO: Firebase SDK não foi carregado corretamente");
+            } else {
+                console.log("Firebase SDK carregado com sucesso");
+            }
+            
+            // Verificar elementos essenciais da UI
+            const uiElements = [
+                {name: 'Tela inicial', elem: document.getElementById('start-screen')},
+                {name: 'Tela do jogo local', elem: document.getElementById('local-game-screen')},
+                {name: 'Tela de opções online', elem: document.getElementById('online-options-screen')}
+            ];
+            
+            const missingElements = uiElements.filter(e => !e.elem);
+            
+            if (missingElements.length > 0) {
+                console.error("ERRO: Os seguintes elementos UI não foram encontrados:", 
+                    missingElements.map(e => e.name).join(', '));
+            } else {
+                console.log("Todos os elementos essenciais da UI foram encontrados");
+            }
+            
+            // Verificar botões principais
+            const mainButtons = [
+                'play-local-btn', 'play-online-btn', 'options-btn', 'rules-btn'
+            ];
+            
+            mainButtons.forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    console.log(`Botão '${id}' encontrado, adicionando evento de teste`);
+                    // Adicionar evento de backup para garantir funcionamento
+                    btn.addEventListener('click', function() {
+                        console.log(`Clique no botão '${id}' detectado`);
+                        
+                        // Mapeamento de redirecionamento para cada botão
+                        const redirectMap = {
+                            'play-local-btn': 'local-game-screen',
+                            'play-online-btn': 'online-options-screen',
+                            'options-btn': 'options-screen',
+                            'rules-btn': 'rules-screen'
+                        };
+                        
+                        // Redirecionar para a tela correta
+                        if (redirectMap[id]) {
+                            // Esconder todas as telas
+                            document.querySelectorAll('.screen').forEach(screen => {
+                                screen.classList.remove('active');
+                            });
+                            
+                            // Mostrar a tela de destino
+                            const targetScreen = document.getElementById(redirectMap[id]);
+                            if (targetScreen) {
+                                targetScreen.classList.add('active');
+                                console.log(`Navegando para a tela: ${redirectMap[id]}`);
+                            } else {
+                                console.error(`Tela de destino não encontrada: ${redirectMap[id]}`);
+                            }
+                        }
+                    });
+                } else {
+                    console.error(`ERRO: Botão '${id}' não foi encontrado`);
+                }
+            });
+        });
+    </script>
 </body>
 </html>

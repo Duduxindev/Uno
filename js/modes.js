@@ -1,327 +1,184 @@
 /**
- * Modos de Jogo
+ * Implementação dos modos de jogo UNO
+ * Última atualização: 2025-04-11 16:40:23
+ * Desenvolvido por: Duduxindev
  */
 class GameMode {
-    constructor(name, description) {
+    constructor(name, options = {}) {
         this.name = name;
-        this.description = description;
-        this.rules = {};
-    }
-    
-    getRules() {
-        return this.rules;
-    }
-    
-    applyCardEffect(game, card, chosenColor = null) {
-        // Lógica padrão para aplicar efeitos de cartas
-        switch(card.value) {
-            case 'skip':
-                return this.applySkipEffect(game);
-            case 'reverse':
-                return this.applyReverseEffect(game);
-            case 'draw2':
-                return this.applyDraw2Effect(game);
-            case 'wild':
-                return this.applyWildEffect(game, chosenColor);
-            case 'wild-draw-four':
-                return this.applyWildDraw4Effect(game, chosenColor);
-            default:
-                return this.applyNumberEffect(game, card);
-        }
-    }
-    
-    applySkipEffect(game) {
-        const nextPlayerId = game.getNextPlayerId();
-        game.players[nextPlayerId].gotSkipped();
-        game.advanceToNextPlayer(); // Avança uma vez mais para pular o próximo jogador
-        return { skipped: nextPlayerId };
-    }
-    
-    applyReverseEffect(game) {
-        game.reverseDirection();
+        this.options = this.getDefaultOptions();
         
-        // Em jogos de 2 jogadores, reverse funciona como skip
-        if (game.players.length === 2) {
-            game.advanceToNextPlayer(); // Pula o próximo jogador
-            return { reversed: true, skipped: game.getNextPlayerId() };
-        }
-        
-        return { reversed: true };
-    }
-    
-    applyDraw2Effect(game) {
-        const nextPlayerId = game.getNextPlayerId();
-        const drawnCards = game.deck.drawCards(2);
-        game.players[nextPlayerId].addCards(drawnCards);
-        game.players[nextPlayerId].gotSkipped();
-        game.advanceToNextPlayer(); // Pula o jogador que comprou
-        return { playerDrawn: nextPlayerId, count: 2 };
-    }
-    
-    applyWildEffect(game, chosenColor) {
-        if (!chosenColor) {
-            throw new Error("Uma cor deve ser escolhida para curinga");
-        }
-        return { colorChanged: chosenColor };
-    }
-    
-    applyWildDraw4Effect(game, chosenColor) {
-        if (!chosenColor) {
-            throw new Error("Uma cor deve ser escolhida para curinga +4");
-        }
-        
-        const nextPlayerId = game.getNextPlayerId();
-        const drawnCards = game.deck.drawCards(4);
-        game.players[nextPlayerId].addCards(drawnCards);
-        game.players[nextPlayerId].gotSkipped();
-        game.advanceToNextPlayer(); // Pula o jogador que comprou
-        
-        return { 
-            colorChanged: chosenColor, 
-            playerDrawn: nextPlayerId, 
-            count: 4 
-        };
-    }
-    
-    applyNumberEffect(game, card) {
-        // Cartas numéricas não têm efeito especial no modo normal
-        return { number: card.value };
-    }
-}
-
-class NormalMode extends GameMode {
-    constructor() {
-        super('normal', 'Regras padrão do UNO.');
-        
-        this.rules = {
-            stacking: false,              // Não permite empilhar +2/+4
-            forcePlay: false,             // Não força jogar a carta comprada
-            jumpIn: false,                // Não permite jump-in
-            sevenZero: false,             // Sem regras especiais para 7 e 0
-            drawToMatch: true             // Compra até encontrar uma carta jogável
-        };
-    }
-}
-
-class WildMode extends GameMode {
-    constructor() {
-        super('wild', 'Mais cartas especiais no baralho.');
-        
-        this.rules = {
-            stacking: false,
-            forcePlay: false,
-            jumpIn: false,
-            sevenZero: false,
-            drawToMatch: true
-        };
-    }
-}
-
-class NoMercyMode extends GameMode {
-    constructor() {
-        super('no-mercy', 'Sem limitações para cartas +2 e +4, possibilitando grandes sequências.');
-        
-        this.rules = {
-            stacking: true,               // Permite empilhar +2/+4
-            forcePlay: false,
-            jumpIn: false,
-            sevenZero: false,
-            drawToMatch: true
-        };
-    }
-    
-    applyDraw2Effect(game) {
-        // Verifica se o próximo jogador tem um +2 para empilhar
-        const nextPlayerId = game.getNextPlayerId();
-        const nextPlayer = game.players[nextPlayerId];
-        
-        if (this.rules.stacking && nextPlayer.hasCardType('action', 'draw2')) {
-            // Não faz nada agora, permite que o próximo jogador empilhe
-            game.drawStack = (game.drawStack || 0) + 2;
-            return { stacked: true, drawStack: game.drawStack };
-        } else if (game.drawStack) {
-            // Se já havia um stack, o jogador deve comprar todas as cartas acumuladas
-            const drawnCards = game.deck.drawCards(game.drawStack + 2);
-            nextPlayer.addCards(drawnCards);
-            nextPlayer.gotSkipped();
-            game.advanceToNextPlayer();
-            
-            const stackTotal = game.drawStack + 2;
-            game.drawStack = 0; // Reseta o stack
-            
-            return { playerDrawn: nextPlayerId, count: stackTotal };
-        } else {
-            // Comportamento normal: próximo jogador compra 2 cartas
-            return super.applyDraw2Effect(game);
-        }
-    }
-    
-    applyWildDraw4Effect(game, chosenColor) {
-        if (!chosenColor) {
-            throw new Error("Uma cor deve ser escolhida para curinga +4");
-        }
-        
-        // Verifica se o próximo jogador tem um +4 para empilhar
-        const nextPlayerId = game.getNextPlayerId();
-        const nextPlayer = game.players[nextPlayerId];
-        
-        if (this.rules.stacking && nextPlayer.hasCardType('wild', 'wild-draw-four')) {
-            // Não faz nada agora, permite que o próximo jogador empilhe
-            game.drawStack = (game.drawStack || 0) + 4;
-            return { 
-                colorChanged: chosenColor, 
-                stacked: true, 
-                drawStack: game.drawStack 
-            };
-        } else if (game.drawStack) {
-            // Se já havia um stack, o jogador deve comprar todas as cartas acumuladas
-            const drawnCards = game.deck.drawCards(game.drawStack + 4);
-            nextPlayer.addCards(drawnCards);
-            nextPlayer.gotSkipped();
-            game.advanceToNextPlayer();
-            
-            const stackTotal = game.drawStack + 4;
-            game.drawStack = 0; // Reseta o stack
-            
-            return { 
-                colorChanged: chosenColor, 
-                playerDrawn: nextPlayerId, 
-                count: stackTotal 
-            };
-        } else {
-            // Comportamento normal: próximo jogador compra 4 cartas
-            return super.applyWildDraw4Effect(game, chosenColor);
-        }
-    }
-}
-
-class ProgressiveMode extends GameMode {
-    constructor() {
-        super('progressive', 'Cartas +2 e +4 podem ser empilhadas, acumulando o efeito.');
-        
-        this.rules = {
-            stacking: true,
-            forcePlay: true,              // Força jogar carta comprada quando possível
-            jumpIn: false,
-            sevenZero: false,
-            drawToMatch: true
-        };
-    }
-    
-    // Usa mesma lógica de empilhamento do NoMercyMode
-    applyDraw2Effect(game) {
-        return NoMercyMode.prototype.applyDraw2Effect.call(this, game);
-    }
-    
-    applyWildDraw4Effect(game, chosenColor) {
-        return NoMercyMode.prototype.applyWildDraw4Effect.call(this, game, chosenColor);
-    }
-}
-
-class SevenZeroMode extends GameMode {
-    constructor() {
-        super('seven-zero', 'A carta 7 faz trocar mãos com outro jogador e a carta 0 faz todos passarem suas mãos.');
-        
-        this.rules = {
-            stacking: false,
-            forcePlay: false,
-            jumpIn: false,
-            sevenZero: true,              // Regras especiais para 7 e 0
-            drawToMatch: true
-        };
-    }
-    
-    applyNumberEffect(game, card) {
-        if (this.rules.sevenZero) {
-            if (card.value === '7') {
-                return this.applySevenEffect(game);
-            } else if (card.value === '0') {
-                return this.applyZeroEffect(game);
+        // Aplicar opções fornecidas
+        for (const [key, value] of Object.entries(options)) {
+            if (this.options.hasOwnProperty(key)) {
+                this.options[key] = value;
             }
         }
-        
-        return super.applyNumberEffect(game, card);
     }
     
-    applySevenEffect(game) {
-        // O jogador atual troca as cartas com outro jogador de sua escolha
-        return { specialNumber: '7', requiresPlayerChoice: true };
-    }
-    
-    applyZeroEffect(game) {
-        // Todos os jogadores passam suas mãos no sentido do jogo
-        const hands = game.players.map(player => [...player.hand]);
-        
-        if (game.direction === 1) {
-            // Sentido horário
-            const firstHand = hands.shift();
-            hands.push(firstHand);
-        } else {
-            // Sentido anti-horário
-            const lastHand = hands.pop();
-            hands.unshift(lastHand);
-        }
-        
-        // Atribui as novas mãos aos jogadores
-        game.players.forEach((player, index) => {
-            player.hand = hands[index];
-        });
-        
-        return { specialNumber: '0', handsRotated: true };
-    }
-}
-
-class CustomMode extends GameMode {
-    constructor(customRules) {
-        super('custom', 'Modo de jogo personalizado com regras customizadas.');
-        
-        this.rules = {
-            stacking: customRules.stacking || false,
-            forcePlay: customRules.forcePlay || false,
-            jumpIn: customRules.jumpIn || false,
-            sevenZero: customRules.sevenZero || false,
-            drawToMatch: true
+    // Opções padrão para todos os modos
+    getDefaultOptions() {
+        return {
+            stacking: false,        // Permitir empilhar cartas +2 e +4
+            jumpIn: false,          // Permitir jogar cartas idênticas fora do turno
+            forcePlay: false,       // Forçar a jogar a carta comprada se possível
+            sevenTrade: false,      // Trocar mãos ao jogar um 7
+            zeroRotate: false,      // Rotacionar mãos ao jogar um 0
+            drawToMatch: true,      // Comprar até encontrar uma carta jogável
+            challengePlus4: true,   // Permitir desafiar cartas +4
+            timeLimit: 30,          // Tempo limite para jogar (em segundos)
+            maxDrawCount: 1         // Número máximo de cartas que podem ser compradas por turno
         };
     }
     
-    applyDraw2Effect(game) {
-        if (this.rules.stacking) {
-            return NoMercyMode.prototype.applyDraw2Effect.call(this, game);
-        }
-        return super.applyDraw2Effect(game);
+    // Verificar se uma regra está ativa
+    isRuleActive(ruleName) {
+        return this.options[ruleName] === true;
     }
     
-    applyWildDraw4Effect(game, chosenColor) {
-        if (this.rules.stacking) {
-            return NoMercyMode.prototype.applyWildDraw4Effect.call(this, game, chosenColor);
+    // Aplicar efeitos das cartas especiais
+    applyCardEffect(game, card, chosenColor = null) {
+        // Definir a cor para curinga
+        if (card.type === 'wild') {
+            game.currentColor = chosenColor || game.currentColor;
+        } else {
+            game.currentColor = card.color;
         }
-        return super.applyWildDraw4Effect(game, chosenColor);
+        
+        // Efeitos de cartas
+        switch (card.value) {
+            case 'skip':
+                // Pular o próximo jogador
+                game.skipNextPlayer();
+                break;
+                
+            case 'reverse':
+                // Inverter a direção do jogo
+                game.reverseDirection();
+                
+                // Em jogos de 2 jogadores, funciona como Skip
+                if (game.players.length === 2) {
+                    game.skipNextPlayer();
+                }
+                break;
+                
+            case 'draw2':
+                // Próximo jogador compra 2 cartas e perde a vez
+                if (this.options.stacking && game.checkNextPlayerHasDraw2()) {
+                    // Em modo de empilhamento, permite que o próximo jogador responda com outra carta +2
+                    game.drawStack += 2;
+                } else {
+                    // Próximo jogador compra 2 cartas
+                    game.nextPlayerDrawCards(2);
+                    game.skipNextPlayer();
+                }
+                break;
+                
+            case 'wild-draw-four':
+                // Próximo jogador compra 4 cartas e perde a vez
+                if (this.options.stacking && game.checkNextPlayerHasDraw4()) {
+                    // Em modo de empilhamento, permite que o próximo jogador responda com outra carta +4
+                    game.drawStack += 4;
+                } else {
+                    // Próximo jogador compra 4 cartas
+                    game.nextPlayerDrawCards(4);
+                    game.skipNextPlayer();
+                }
+                break;
+                
+            case '7':
+                // Regra do Seven: Trocar mãos com outro jogador
+                if (this.options.sevenTrade) {
+                    // Implementação da troca de mãos fica no jogo
+                    game.handleSevenTrade();
+                }
+                break;
+                
+            case '0':
+                // Regra do Zero: Rotacionar todas as mãos
+                if (this.options.zeroRotate) {
+                    // Implementação da rotação de mãos fica no jogo
+                    game.handleZeroRotate();
+                }
+                break;
+        }
     }
     
-    applyNumberEffect(game, card) {
-        if (this.rules.sevenZero) {
-            return SevenZeroMode.prototype.applyNumberEffect.call(this, game, card);
-        }
-        return super.applyNumberEffect(game, card);
+    // Serializar para armazenamento/transferência
+    toJSON() {
+        return {
+            name: this.name,
+            options: { ...this.options }
+        };
+    }
+    
+    // Criar modo de jogo a partir de objeto serializado
+    static fromJSON(data) {
+        return new GameMode(data.name, data.options);
     }
 }
 
-// Factory para criar o modo adequado
-function createGameMode(mode, customRules = {}) {
-    switch(mode) {
-        case 'normal':
-            return new NormalMode();
-        case 'wild':
-            return new WildMode();
-        case 'no-mercy':
-            return new NoMercyMode();
-        case 'progressive':
-            return new ProgressiveMode();
-        case 'seven-zero':
-            return new SevenZeroMode();
-        case 'custom':
-            return new CustomMode(customRules);
-        default:
-            return new NormalMode();
+// Modos de jogo pré-definidos
+class GameModes {
+    static getNormalMode() {
+        return new GameMode('normal', {
+            stacking: false,
+            jumpIn: false,
+            forcePlay: false,
+            sevenTrade: false,
+            zeroRotate: false
+        });
+    }
+    
+    static getWildMode() {
+        return new GameMode('wild', {
+            stacking: true,
+            jumpIn: true,
+            forcePlay: true,
+            sevenTrade: false,
+            zeroRotate: false
+        });
+    }
+    
+    static getNoMercyMode() {
+        return new GameMode('no-mercy', {
+            stacking: true,
+            jumpIn: false,
+            forcePlay: true,
+            sevenTrade: false,
+            zeroRotate: false,
+            challengePlus4: false
+        });
+    }
+    
+    static getSevenZeroMode() {
+        return new GameMode('seven-zero', {
+            stacking: false,
+            jumpIn: false,
+            forcePlay: false,
+            sevenTrade: true,
+            zeroRotate: true
+        });
+    }
+    
+    static getCustomMode(options) {
+        return new GameMode('custom', options);
+    }
+    
+    static getModeByName(name, customOptions = {}) {
+        switch (name) {
+            case 'normal':
+                return this.getNormalMode();
+            case 'wild':
+                return this.getWildMode();
+            case 'no-mercy':
+                return this.getNoMercyMode();
+            case 'seven-zero':
+                return this.getSevenZeroMode();
+            case 'custom':
+                return this.getCustomMode(customOptions);
+            default:
+                return this.getNormalMode();
+        }
     }
 }

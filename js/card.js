@@ -1,6 +1,6 @@
 /**
  * Implementação das Cartas UNO
- * Última atualização: 2025-04-11 16:14:10
+ * Última atualização: 2025-04-11 16:40:23
  * Desenvolvido por: Duduxindev
  */
 class UnoCard {
@@ -24,7 +24,7 @@ class UnoCard {
         }
         
         // Se o valor da carta for o mesmo da carta de topo
-        if (this.value === topCard.value) {
+        if (topCard && this.value === topCard.value) {
             return true;
         }
         
@@ -57,16 +57,16 @@ class UnoCard {
                 
                 switch(this.value) {
                     case 'skip':
-                        symbol = '⊘';
+                        symbol = 'S';
                         break;
                     case 'reverse':
-                        symbol = '⇄';
+                        symbol = 'R';
                         break;
                     case 'draw2':
                         symbol = '+2';
                         break;
                     case 'wild':
-                        symbol = '★';
+                        symbol = 'W';
                         break;
                     case 'wild-draw-four':
                         symbol = '+4';
