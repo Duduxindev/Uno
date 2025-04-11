@@ -6,7 +6,7 @@
     <title>UNO Online - Duduxindev</title>
     <!-- Carregando estilos -->
     <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/cards.css">
+    <link rel="stylesheet" href="css/cards-fixed.css">
     <link rel="stylesheet" href="css/game.css">
     <link rel="stylesheet" href="css/menu.css">
     <link rel="stylesheet" href="css/chat.css">
@@ -41,7 +41,7 @@
             </button>
         </div>
         <div class="version-info">
-            v1.2.0 - Atualizado em 11/04/2025 17:11:13<br>
+            v2.0.0 - Atualizado em 2025-04-11 20:02:19<br>
             Desenvolvido por Duduxindev
         </div>
     </div>
@@ -50,27 +50,60 @@
     <div id="local-game-screen" class="screen">
         <h2>Jogar no Dispositivo</h2>
         <div class="form-container">
-            <div class="mode-selection-container">
-                <button class="mode-card selected" data-mode="normal">
-                    <div class="mode-icon">N</div>
-                    <h3>Modo Normal</h3>
-                    <p>Regras clássicas do UNO</p>
-                </button>
-                <button class="mode-card" data-mode="wild">
-                    <div class="mode-icon">W</div>
-                    <h3>Modo Wild</h3>
-                    <p>Mais cartas especiais</p>
-                </button>
-                <button class="mode-card" data-mode="no-mercy">
-                    <div class="mode-icon">NM</div>
-                    <h3>No Mercy</h3>
-                    <p>Empilhe +2/+4 sem limites</p>
-                </button>
-                <button class="mode-card" data-mode="seven-zero">
-                    <div class="mode-icon">7-0</div>
-                    <h3>Seven-Zero</h3>
-                    <p>Regras especiais para 7 e 0</p>
-                </button>
+            <div class="mode-selection">
+                <h3>Selecione o Modo de Jogo</h3>
+                <div class="modes-container">
+                    <div class="mode-card selected" data-mode="normal">
+                        <div class="mode-icon">N</div>
+                        <h4>Normal</h4>
+                        <p>Regras clássicas do UNO</p>
+                    </div>
+                    
+                    <div class="mode-card" data-mode="wild">
+                        <div class="mode-icon">W</div>
+                        <h4>Wild</h4>
+                        <p>Mais cartas especiais</p>
+                    </div>
+                    
+                    <div class="mode-card" data-mode="no-mercy">
+                        <div class="mode-icon">NM</div>
+                        <h4>No Mercy</h4>
+                        <p>Empilhe +2/+4 sem limites</p>
+                    </div>
+                    
+                    <div class="mode-card" data-mode="seven-zero">
+                        <div class="mode-icon">7-0</div>
+                        <h4>Seven-Zero</h4>
+                        <p>Regras para 7 e 0</p>
+                    </div>
+                    
+                    <div class="mode-card" data-mode="extreme">
+                        <div class="mode-icon">EX</div>
+                        <h4>Extreme</h4>
+                        <p>Todas as regras especiais</p>
+                    </div>
+                    
+                    <div class="mode-card" data-mode="speed">
+                        <div class="mode-icon">SP</div>
+                        <h4>Speed</h4>
+                        <p>Turnos de 15 segundos</p>
+                    </div>
+                    
+                    <div class="mode-card" data-mode="chaos">
+                        <div class="mode-icon">CH</div>
+                        <h4>Chaos</h4>
+                        <p>Regras imprevisíveis</p>
+                    </div>
+                    
+                    <div class="mode-card" data-mode="action-only">
+                        <div class="mode-icon">AO</div>
+                        <h4>Action Only</h4>
+                        <p>Sem cartas numéricas</p>
+                    </div>
+                </div>
+                <div class="mode-description" id="mode-description">
+                    Modo clássico com regras originais do UNO.
+                </div>
             </div>
             
             <div class="config-section">
@@ -146,11 +179,18 @@
             <div class="form-group">
                 <label for="room-mode">Modo de Jogo:</label>
                 <select id="room-mode" class="form-select">
-                    <option value="normal">Normal</option>
-                    <option value="wild">Wild</option>
-                    <option value="no-mercy">No Mercy</option>
-                    <option value="seven-zero">Seven-Zero</option>
+                    <option value="normal">Normal - Regras clássicas</option>
+                    <option value="wild">Wild - Mais cartas especiais</option>
+                    <option value="no-mercy">No Mercy - Empilhamento sem limites</option>
+                    <option value="seven-zero">Seven-Zero - Troca de mãos</option>
+                    <option value="extreme">Extreme - Cartas especiais e regras caóticas</option>
+                    <option value="speed">Speed - Jogo rápido, turnos de 15s</option>
+                    <option value="chaos">Chaos - Regras imprevisíveis</option>
+                    <option value="action-only">Action Only - Sem cartas numéricas</option>
                 </select>
+                <div class="mode-description" id="room-mode-description">
+                    Modo clássico com regras originais do UNO.
+                </div>
             </div>
             <div class="form-group">
                 <label for="max-players">Número de Jogadores:</label>
@@ -249,12 +289,12 @@
                     <p>Aguardando jogadores entrarem na sala...</p>
                 </div>
                 <div class="buttons-row">
-                    <button id="start-game-btn" class="primary-btn">Iniciar Jogo</button>
+                    <button id="start-game-btn" class="primary-btn pulse-button">Iniciar Jogo</button>
                     <button id="leave-room-btn" class="secondary-btn">Sair da Sala</button>
                 </div>
             </div>
             
-            <!-- Nova seção de chat na sala de espera -->
+            <!-- Seção de chat na sala de espera -->
             <div class="waiting-room-right">
                 <div class="chat-container">
                     <h3>Chat da Sala</h3>
@@ -327,7 +367,7 @@
                 </div>
             </div>
             
-            <!-- Nova seção de chat no jogo -->
+            <!-- Seção de chat no jogo -->
             <div class="game-sidebar">
                 <div class="chat-container">
                     <h3>Chat</h3>
@@ -388,6 +428,10 @@
                 <li><strong>Wild:</strong> Mais cartas especiais no baralho.</li>
                 <li><strong>No Mercy:</strong> Sem limitações para cartas +2 e +4, possibilitando grandes sequências.</li>
                 <li><strong>Seven-Zero:</strong> A carta 7 faz trocar mãos com outro jogador e a carta 0 faz todos os jogadores passarem suas mãos.</li>
+                <li><strong>Extreme:</strong> Todas as regras especiais ativadas incluindo cartas exclusivas.</li>
+                <li><strong>Speed:</strong> Jogo rápido com turnos de 15 segundos.</li>
+                <li><strong>Chaos:</strong> Regras imprevisíveis que mudam a cada rodada.</li>
+                <li><strong>Action Only:</strong> Apenas cartas de ação, sem cartas numéricas.</li>
             </ul>
             
             <h3>Regras Personalizáveis</h3>
@@ -395,6 +439,8 @@
                 <li><strong>Empilhamento:</strong> Cartas +2 e +4 podem ser empilhadas, acumulando o efeito.</li>
                 <li><strong>Jump-In:</strong> Se você tem uma carta idêntica à do topo da pilha de descarte, pode jogá-la a qualquer momento.</li>
                 <li><strong>Força de Jogo:</strong> Se comprar uma carta jogável, deve jogá-la imediatamente.</li>
+                <li><strong>Troca de Sete:</strong> Ao jogar um 7, troque sua mão com outro jogador à sua escolha.</li>
+                <li><strong>Rotação de Zero:</strong> Ao jogar um 0, todos passam suas mãos na direção do jogo.</li>
             </ul>
         </div>
         <button id="back-from-rules" class="secondary-btn">Voltar</button>
@@ -472,12 +518,14 @@
     <!-- Firebase Configuration and App Scripts -->
     <script src="js/firebase-config.js"></script>
     <script src="js/storage.js"></script>
-    <script src="js/cards.js"></script>
     <script src="js/player.js"></script>
     <script src="js/modes.js"></script>
     <script src="js/room.js"></script>
     <script src="js/chat.js"></script>
-    <script src="js/game.js"></script>
+    <script src="js/card-renderer.js"></script>
+    <script src="js/game-starter.js"></script>
+    <script src="js/game-initializer.js"></script>
+    <script src="js/ai-player.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/app.js"></script>
     
@@ -485,97 +533,191 @@
     <script>
         console.log("Inicializando aplicação UNO em: " + new Date().toISOString());
         
+        function showScreen(screenId) {
+            // Esconder todas as telas
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            
+            // Mostrar a tela solicitada
+            const targetScreen = document.getElementById(screenId);
+            if (targetScreen) {
+                targetScreen.classList.add('active');
+                console.log(`Navegando para a tela: ${screenId}`);
+            } else {
+                console.error(`Tela não encontrada: ${screenId}`);
+            }
+        }
+        
         // Verificar se todos os scripts foram carregados corretamente
         document.addEventListener('DOMContentLoaded', function() {
             console.log("DOM carregado completamente");
             
-            // Verificar se as principais classes estão definidas
-            const classesCheck = [
-                {name: 'RoomManager', obj: window.RoomManager},
-                {name: 'UnoCard', obj: window.UnoCard}, 
-                {name: 'UnoDeck', obj: window.UnoDeck},
-                {name: 'Player', obj: window.Player},
-                {name: 'GameMode', obj: window.GameMode},
-                {name: 'UnoGame', obj: window.UnoGame},
-                {name: 'GameStorage', obj: window.GameStorage},
-                {name: 'ChatManager', obj: window.ChatManager}
-            ];
-            
-            const missingClasses = classesCheck.filter(c => typeof c.obj !== 'function');
-            
-            if (missingClasses.length > 0) {
-                console.error("ERRO: As seguintes classes não foram carregadas:", 
-                    missingClasses.map(c => c.name).join(', '));
-            } else {
-                console.log("Todas as classes necessárias foram carregadas com sucesso");
-            }
-            
-            // Verificar Firebase
-            if (typeof firebase === 'undefined') {
-                console.error("ERRO: Firebase SDK não foi carregado corretamente");
-            } else {
-                console.log("Firebase SDK carregado com sucesso");
-            }
-            
-            // Verificar elementos essenciais da UI
-            const uiElements = [
-                {name: 'Tela inicial', elem: document.getElementById('start-screen')},
-                {name: 'Tela do jogo local', elem: document.getElementById('local-game-screen')},
-                {name: 'Tela de opções online', elem: document.getElementById('online-options-screen')}
-            ];
-            
-            const missingElements = uiElements.filter(e => !e.elem);
-            
-            if (missingElements.length > 0) {
-                console.error("ERRO: Os seguintes elementos UI não foram encontrados:", 
-                    missingElements.map(e => e.name).join(', '));
-            } else {
-                console.log("Todos os elementos essenciais da UI foram encontrados");
-            }
-            
             // Verificar botões principais
             const mainButtons = [
-                'play-local-btn', 'play-online-btn', 'options-btn', 'rules-btn'
+                {id: 'play-local-btn', target: 'local-game-screen'},
+                {id: 'play-online-btn', target: 'online-options-screen'},
+                {id: 'options-btn', target: 'options-screen'},
+                {id: 'rules-btn', target: 'rules-screen'},
+                {id: 'back-from-local', target: 'start-screen'},
+                {id: 'back-from-online-options', target: 'start-screen'},
+                {id: 'create-room-option', target: 'create-room-screen'},
+                {id: 'join-room-option', target: 'join-room-screen'},
+                {id: 'back-from-create', target: 'online-options-screen'},
+                {id: 'back-from-join', target: 'online-options-screen'},
+                {id: 'back-from-rules', target: 'start-screen'},
+                {id: 'back-from-options', target: 'start-screen'}
             ];
             
-            mainButtons.forEach(id => {
-                const btn = document.getElementById(id);
+            mainButtons.forEach(button => {
+                const btn = document.getElementById(button.id);
                 if (btn) {
-                    console.log(`Botão '${id}' encontrado, adicionando evento de teste`);
-                    // Adicionar evento de backup para garantir funcionamento
-                    btn.addEventListener('click', function() {
-                        console.log(`Clique no botão '${id}' detectado`);
-                        
-                        // Mapeamento de redirecionamento para cada botão
-                        const redirectMap = {
-                            'play-local-btn': 'local-game-screen',
-                            'play-online-btn': 'online-options-screen',
-                            'options-btn': 'options-screen',
-                            'rules-btn': 'rules-screen'
-                        };
-                        
-                        // Redirecionar para a tela correta
-                        if (redirectMap[id]) {
-                            // Esconder todas as telas
-                            document.querySelectorAll('.screen').forEach(screen => {
-                                screen.classList.remove('active');
-                            });
-                            
-                            // Mostrar a tela de destino
-                            const targetScreen = document.getElementById(redirectMap[id]);
-                            if (targetScreen) {
-                                targetScreen.classList.add('active');
-                                console.log(`Navegando para a tela: ${redirectMap[id]}`);
-                            } else {
-                                console.error(`Tela de destino não encontrada: ${redirectMap[id]}`);
-                            }
-                        }
+                    console.log(`Configurando botão: ${button.id}`);
+                    
+                    // Substituir o botão para limpar qualquer event listener anterior
+                    const newBtn = btn.cloneNode(true);
+                    if (btn.parentNode) {
+                        btn.parentNode.replaceChild(newBtn, btn);
+                    }
+                    
+                    // Adicionar novo event listener
+                    newBtn.addEventListener('click', function() {
+                        console.log(`Botão ${button.id} clicado!`);
+                        showScreen(button.target);
                     });
                 } else {
-                    console.error(`ERRO: Botão '${id}' não foi encontrado`);
+                    console.error(`Botão não encontrado: ${button.id}`);
                 }
             });
+            
+            // Adicionar pulsação animada ao botão de iniciar jogo
+            const pulseButton = document.querySelector('.pulse-button');
+            if (pulseButton) {
+                setInterval(() => {
+                    pulseButton.classList.toggle('pulse');
+                }, 1500);
+            }
+            
+            // Executar inicialização dos componentes
+            if (window.gameInitializer) {
+                console.log("Componentes já inicializados");
+            } else {
+                console.log("Iniciando componentes do jogo...");
+                setTimeout(() => {
+                    if (typeof GameInitializer === 'function') {
+                        window.gameInitializer = new GameInitializer();
+                    } else {
+                        console.error("GameInitializer não encontrado!");
+                    }
+                }, 500);
+            }
         });
     </script>
+
+    <style>
+        /* Estilos para botão de iniciar jogo com pulsação */
+        .pulse-button {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .pulse-button::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                to bottom right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.2) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            transform: rotate(45deg);
+            transition: all 0.5s;
+            opacity: 0;
+        }
+        
+        .pulse-button.pulse::after {
+            animation: pulse-shine 1s forwards;
+        }
+        
+        @keyframes pulse-shine {
+            0% { transform: translateX(-100%) rotate(45deg); opacity: 0; }
+            10% { opacity: 1; }
+            100% { transform: translateX(100%) rotate(45deg); opacity: 0; }
+        }
+        
+        /* Destacar modos de jogo */
+        .mode-card {
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            margin: 10px;
+            width: 120px;
+        }
+        
+        .mode-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .mode-card.selected {
+            background-color: #e8f4fe;
+            border: 2px solid #2196F3;
+            transform: translateY(-5px);
+        }
+        
+        .modes-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .mode-icon {
+            background-color: #2196F3;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin: 0 auto 10px;
+        }
+        
+        .mode-card h4 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+        }
+        
+        .mode-card p {
+            margin: 0;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .mode-description {
+            background-color: rgba(0,0,0,0.05);
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .mode-description.highlight {
+            background-color: rgba(33, 150, 243, 0.1);
+        }
+    </style>
 </body>
 </html>
