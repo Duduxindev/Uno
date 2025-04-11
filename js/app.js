@@ -1,6 +1,6 @@
 /**
  * Aplicação Principal - UNO Game
- * Última atualização: 2025-04-11 16:14:10
+ * Última atualização: 2025-04-11 16:21:47
  * Desenvolvido por: Duduxindev
  */
 document.addEventListener('DOMContentLoaded', () => {

@@ -708,6 +708,138 @@ h1, h2, h3, h4 {
     transform: translateX(-50%) translateY(-10px);
 }
 
+/* Opções */
+.options-container {
+    width: 100%;
+    max-width: 600px;
+    background-color: white;
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+}
+
+.dark-mode .options-container {
+    background-color: #2d2d2d;
+    box-shadow: var(--shadow-md);
+}
+
+.option-group {
+    margin-bottom: 2rem;
+}
+
+.option-group:last-child {
+    margin-bottom: 0;
+}
+
+.option-group h3 {
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.dark-mode .option-group h3 {
+    border-bottom-color: rgba(255,255,255,0.1);
+}
+
+.option-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+}
+
+/* Switch toggle */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: var(--transition-fast);
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: var(--transition-fast);
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--primary-color);
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px var(--primary-color);
+}
+
+input:checked + .slider:before {
+    transform: translateX(24px);
+}
+
+/* Regras */
+.rules-content {
+    width: 100%;
+    max-width: 800px;
+    background-color: white;
+    border-radius: var(--radius);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+}
+
+.dark-mode .rules-content {
+    background-color: #2d2d2d;
+    box-shadow: var(--shadow-md);
+}
+
+.rules-content h3 {
+    color: var(--primary-color);
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid rgba(232, 30, 36, 0.2);
+}
+
+.dark-mode .rules-content h3 {
+    border-bottom-color: rgba(232, 30, 36, 0.4);
+}
+
+.rules-content p {
+    margin-bottom: 1rem;
+}
+
+.rules-content ul {
+    margin-bottom: 1.5rem;
+    padding-left: 1.5rem;
+}
+
+.rules-content li {
+    margin-bottom: 0.5rem;
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
     .online-options {
@@ -719,7 +851,7 @@ h1, h2, h3, h4 {
         grid-template-columns: repeat(2, 1fr);
     }
     
-    .form-container, .room-info, .players-container {
+    .form-container, .room-info, .players-container, .rules-content, .options-container {
         padding: 1.25rem;
     }
 }

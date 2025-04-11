@@ -1,115 +1,163 @@
 /**
- * Sistema de Armazenamento Local
+ * Gerenciamento de armazenamento local
+ * Última atualização: 2025-04-11 16:26:03
+ * Desenvolvido por: Duduxindev
  */
 class GameStorage {
     constructor() {
-        this.storageKey = 'uno_game_data';
-        this.data = this.loadData();
+        this.storagePrefix = 'uno_game_';
     }
     
-    loadData() {
-        const savedData = localStorage.getItem(this.storageKey);
-        
-        if (savedData) {
-            try {
-                return JSON.parse(savedData);
-            } catch (e) {
-                console.error('Erro ao carregar dados salvos:', e);
-                return this.getDefaultData();
-            }
-        }
-        
-        return this.getDefaultData();
+    // Salvar configurações
+    saveSettings(settings) {
+        localStorage.setItem(this.storagePrefix + 'settings', JSON.stringify(settings));
     }
     
-    getDefaultData() {
-        return {
-            playerName: '',
-            playerHistory: [],
-            settings: {
-                soundEffects: true,
-                backgroundMusic: true,
-                cardAnimation: true,
-                darkMode: false,
-                autoUno: false,
-                turnTimer: true
-            },
-            stats: {
-                gamesPlayed: 0,
-                gamesWon: 0,
-                cardsPlayed: 0,
-                specialCardsPlayed: 0,
-                unosCalled: 0
-            },
-            lastRoom: null
-        };
-    }
-    
-    saveData() {
-        localStorage.setItem(this.storageKey, JSON.stringify(this.data));
-    }
-    
-    getPlayerName() {
-        return this.data.playerName;
-    }
-    
-    setPlayerName(name) {
-        this.data.playerName = name;
-        this.saveData();
-    }
-    
+    // Obter configurações
     getSettings() {
-        return this.data.settings;
+        const defaultSettings = {
+            darkMode: false,
+            soundEffects: true,
+            backgroundMusic: true,
+            cardAnimation: true,
+            autoUno: false,
+            turnTimer: true
+        };
+        
+        const savedSettings = localStorage.getItem(this.storagePrefix + 'settings');
+        
+        if (!savedSettings) {
+            return defaultSettings;
+        }
+        
+        try {
+            return { ...defaultSettings, ...JSON.parse(savedSettings) };
+        } catch (error) {
+            console.error('Erro ao carregar configurações:', error);
+            return defaultSettings;
+        }
     }
     
-    updateSettings(settings) {
-        this.data.settings = {...this.data.settings, ...settings};
-        this.saveData();
+    // Salvar estatísticas do jogador
+    saveStats(stats) {
+        const currentStats = this.getStats();
+        const updatedStats = {
+            totalGames: currentStats.totalGames + 1,
+            wins: currentStats.wins + (stats.won ? 1 : 0),
+            cardsPlayed: currentStats.cardsPlayed + (stats.cardsPlayed || 0),
+            specialCardsPlayed: currentStats.specialCardsPlayed + (stats.specialCardsPlayed || 0),
+            unosCalled: currentStats.unosCalled + (stats.unosCalled || 0),
+            lastGameDate: new Date().toISOString(),
+            gameHistory: [
+                {
+                    date: new Date().toISOString(),
+                    won: stats.won,
+                    mode: stats.mode,
+                    players: stats.playerCount,
+                    cardsPlayed: stats.cardsPlayed || 0
+                },
+                ...currentStats.gameHistory.slice(0, 9) // Manter apenas os últimos 10 jogos
+            ]
+        };
+        
+        localStorage.setItem(this.storagePrefix + 'stats', JSON.stringify(updatedStats));
     }
     
+    // Obter estatísticas do jogador
     getStats() {
-        return this.data.stats;
-    }
-    
-    updateStats(gameStats) {
-        this.data.stats.gamesPlayed++;
+        const defaultStats = {
+            totalGames: 0,
+            wins: 0,
+            cardsPlayed: 0,
+            specialCardsPlayed: 0,
+            unosCalled: 0,
+            lastGameDate: null,
+            gameHistory: []
+        };
         
-        if (gameStats.won) {
-            this.data.stats.gamesWon++;
+        const savedStats = localStorage.getItem(this.storagePrefix + 'stats');
+        
+        if (!savedStats) {
+            return defaultStats;
         }
         
-        this.data.stats.cardsPlayed += gameStats.cardsPlayed || 0;
-        this.data.stats.specialCardsPlayed += gameStats.specialCardsPlayed || 0;
-        this.data.stats.unosCalled += gameStats.unosCalled || 0;
+        try {
+            return { ...defaultStats, ...JSON.parse(savedStats) };
+        } catch (error) {
+            console.error('Erro ao carregar estatísticas:', error);
+            return defaultStats;
+        }
+    }
+    
+    // Salvar preferências do jogador
+    savePlayerPreferences(preferences) {
+        localStorage.setItem(this.storagePrefix + 'preferences', JSON.stringify(preferences));
+    }
+    
+    // Obter preferências do jogador
+    getPlayerPreferences() {
+        const defaultPreferences = {
+            playerName: '',
+            selectedAvatar: 0,
+            favoriteColor: 'red'
+        };
         
-        // Adiciona ao histórico de jogos
-        this.data.playerHistory.push({
-            date: new Date().toISOString(),
-            won: gameStats.won,
-            mode: gameStats.mode,
-            playerCount: gameStats.playerCount,
-            ...gameStats
-        });
+        const savedPreferences = localStorage.getItem(this.storagePrefix + 'preferences');
         
-        // Limita o histórico a 20 jogos
-        if (this.data.playerHistory.length > 20) {
-            this.data.playerHistory.shift();
+        if (!savedPreferences) {
+            return defaultPreferences;
         }
         
-        this.saveData();
+        try {
+            return { ...defaultPreferences, ...JSON.parse(savedPreferences) };
+        } catch (error) {
+            console.error('Erro ao carregar preferências:', error);
+            return defaultPreferences;
+        }
     }
     
-    getLastRoom() {
-        return this.data.lastRoom;
+    // Salvar estado de uma sala para possível reconexão
+    saveSessionInfo(roomCode, playerId) {
+        const sessionInfo = { roomCode, playerId, timestamp: Date.now() };
+        localStorage.setItem(this.storagePrefix + 'session', JSON.stringify(sessionInfo));
     }
     
-    setLastRoom(roomCode) {
-        this.data.lastRoom = roomCode;
-        this.saveData();
+    // Obter informações da última sessão
+    getSessionInfo() {
+        const savedSession = localStorage.getItem(this.storagePrefix + 'session');
+        
+        if (!savedSession) {
+            return null;
+        }
+        
+        try {
+            const session = JSON.parse(savedSession);
+            
+            // Se a sessão for muito antiga (mais de 24 horas), descartá-la
+            if (Date.now() - session.timestamp > 24 * 60 * 60 * 1000) {
+                this.clearSessionInfo();
+                return null;
+            }
+            
+            return session;
+        } catch (error) {
+            console.error('Erro ao carregar informações da sessão:', error);
+            return null;
+        }
     }
     
-    clearLastRoom() {
-        this.data.lastRoom = null;
-        this.saveData();
+    // Limpar informações da sessão
+    clearSessionInfo() {
+        localStorage.removeItem(this.storagePrefix + 'session');
+    }
+    
+    // Salvar último nome de jogador utilizado
+    savePlayerName(name) {
+        localStorage.setItem(this.storagePrefix + 'playerName', name);
+    }
+    
+    // Obter último nome de jogador
+    getPlayerName() {
+        return localStorage.getItem(this.storagePrefix + 'playerName') || '';
     }
 }

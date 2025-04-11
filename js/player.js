@@ -1,5 +1,7 @@
 /**
- * Gerenciamento de Jogadores
+ * Classe do Jogador
+ * Última atualização: 2025-04-11 16:26:03
+ * Desenvolvido por: Duduxindev
  */
 class Player {
     constructor(id, name, isAI = false) {
@@ -7,183 +9,142 @@ class Player {
         this.name = name;
         this.hand = [];
         this.isAI = isAI;
-        this.calledUno = false;
+        this.isHost = false;
+        this.isReady = true;
+        this.hasCalledUno = false;
         this.stats = {
             cardsPlayed: 0,
-            cardsDrawn: 0,
             specialCardsPlayed: 0,
-            skipped: 0,
+            cardsDrawn: 0,
             uno: 0
         };
     }
     
+    // Adicionar carta à mão
     addCard(card) {
         this.hand.push(card);
-        this.calledUno = false;
+        // Resetar status de UNO se o jogador tiver mais de uma carta
+        if (this.hand.length > 1) {
+            this.hasCalledUno = false;
+        }
     }
     
+    // Adicionar várias cartas à mão
     addCards(cards) {
         this.hand = [...this.hand, ...cards];
-        this.calledUno = false;
-        this.stats.cardsDrawn += cards.length;
+        // Resetar status de UNO se o jogador tiver mais de uma carta
+        if (this.hand.length > 1) {
+            this.hasCalledUno = false;
+        }
     }
     
-    playCard(cardId) {
+    // Remover carta da mão
+    removeCard(cardId) {
         const cardIndex = this.hand.findIndex(card => card.id === cardId);
-        
-        if (cardIndex === -1) {
-            return null;
-        }
-        
-        const card = this.hand[cardIndex];
-        this.hand.splice(cardIndex, 1);
-        this.stats.cardsPlayed++;
-        
-        if (card.type === 'action' || card.type === 'wild') {
-            this.stats.specialCardsPlayed++;
-        }
-        
-        // Verificar se o jogador tem apenas uma carta e não chamou UNO
-        if (this.hand.length === 1 && !this.calledUno) {
-            // O jogador está em perigo de ser penalizado se não chamar UNO
-        }
-        
-        return card;
-    }
-    
-    callUno() {
-        this.calledUno = true;
-        this.stats.uno++;
-    }
-    
-    gotSkipped() {
-        this.stats.skipped++;
-    }
-    
-    getPlayableCards(topCard, currentColor) {
-        return this.hand.filter(card => card.canPlayOn(topCard, currentColor));
-    }
-    
-    hasPlayableCard(topCard, currentColor) {
-        return this.getPlayableCards(topCard, currentColor).length > 0;
-    }
-    
-    hasCardType(type, value = null) {
-        return this.hand.some(card => {
-            if (value) {
-                return card.type === type && card.value === value;
+        if (cardIndex !== -1) {
+            const card = this.hand[cardIndex];
+            this.hand.splice(cardIndex, 1);
+            
+            // Atualizar estatísticas
+            this.stats.cardsPlayed++;
+            if (card.type !== 'number') {
+                this.stats.specialCardsPlayed++;
             }
-            return card.type === type;
-        });
+            
+            return card;
+        }
+        return null;
     }
     
+    // Verificar se o jogador tem determinada carta
+    hasCard(cardId) {
+        return this.hand.some(card => card.id === cardId);
+    }
+    
+    // Obter número de cartas na mão
     getCardCount() {
         return this.hand.length;
     }
     
-    sortHand() {
-        // Ordena a mão por cor e valor
-        this.hand.sort((a, b) => {
-            // Primeiro, agrupar por cor
-            if (a.color !== b.color) {
-                // Colocamos as cartas pretas (curingas) no final
-                if (a.color === 'black') return 1;
-                if (b.color === 'black') return -1;
-                
-                // Ordem das cores: vermelho, amarelo, verde, azul
-                const colorOrder = {red: 0, yellow: 1, green: 2, blue: 3};
-                return colorOrder[a.color] - colorOrder[b.color];
+    // Chamar UNO
+    callUno() {
+        if (this.hand.length === 1) {
+            this.hasCalledUno = true;
+            this.stats.uno++;
+            return true;
+        }
+        return false;
+    }
+    
+    // Verificar cartas jogáveis
+    getPlayableCards(topCard, currentColor, gameRules) {
+        return this.hand.filter(card => {
+            // Curingas sempre podem ser jogados
+            if (card.type === 'wild') {
+                return true;
             }
             
-            // Depois, ordenamos por tipo
-            if (a.type !== b.type) {
-                const typeOrder = {number: 0, action: 1, wild: 2};
-                return typeOrder[a.type] - typeOrder[b.type];
+            // Mesma cor
+            if (card.color === currentColor) {
+                return true;
             }
             
-            // Por fim, ordenamos por valor (para números)
-            if (a.type === 'number') {
-                return parseInt(a.value) - parseInt(b.value);
+            // Mesmo valor/símbolo
+            if (topCard && card.value === topCard.value) {
+                return true;
             }
             
-            // Para cartas de ação, ordem: pular, inverter, +2
-            if (a.type === 'action') {
-                const actionOrder = {skip: 0, reverse: 1, draw2: 2};
-                return actionOrder[a.value] - actionOrder[b.value];
+            // Regra de Jump-In (carta idêntica)
+            if (gameRules && gameRules.jumpIn && 
+                topCard && card.color === topCard.color && card.value === topCard.value) {
+                return true;
             }
             
-            // Para curingas, ordem: wild, wild-draw-four
-            if (a.type === 'wild') {
-                if (a.value === 'wild') return -1;
-                if (b.value === 'wild') return 1;
-                return 0;
-            }
-            
-            return 0;
+            return false;
         });
     }
     
-    // Método para IA jogar automaticamente
-    playAI(game) {
-        if (!this.isAI) return null;
+    // Limpar mão (para começar um novo jogo)
+    clearHand() {
+        this.hand = [];
+        this.hasCalledUno = false;
+    }
+    
+    // Trocar mão com outro jogador (regra do 7)
+    swapHandWith(otherPlayer) {
+        const tempHand = this.hand;
+        this.hand = otherPlayer.hand;
+        otherPlayer.hand = tempHand;
         
-        const topCard = game.deck.getTopCard();
-        const currentColor = game.deck.currentColor;
-        const playableCards = this.getPlayableCards(topCard, currentColor);
-        
-        // Se não tem cartas jogáveis, compra uma
-        if (playableCards.length === 0) {
-            return { action: 'draw' };
-        }
-        
-        // Estratégia: priorizar cartas numéricas, depois ação, depois curinga
-        let card = null;
-        
-        // Primeira tentativa: encontrar carta numérica da mesma cor
-        card = playableCards.find(c => c.type === 'number' && c.color === currentColor);
-        if (card) return { action: 'play', cardId: card.id };
-        
-        // Segunda tentativa: encontrar qualquer carta numérica
-        card = playableCards.find(c => c.type === 'number');
-        if (card) return { action: 'play', cardId: card.id };
-        
-        // Terceira tentativa: encontrar carta de ação da mesma cor
-        card = playableCards.find(c => c.type === 'action' && c.color === currentColor);
-        if (card) return { action: 'play', cardId: card.id };
-        
-        // Quarta tentativa: encontrar qualquer carta de ação
-        card = playableCards.find(c => c.type === 'action');
-        if (card) return { action: 'play', cardId: card.id };
-        
-        // Por fim, usa curinga se tiver
-        card = playableCards.find(c => c.type === 'wild');
-        if (card) {
-            // Escolhe a cor mais comum em sua mão
-            const colors = {red: 0, blue: 0, green: 0, yellow: 0};
-            this.hand.forEach(c => {
-                if (c.color !== 'black') {
-                    colors[c.color]++;
-                }
-            });
-            
-            let chosenColor = 'red';
-            let maxCount = 0;
-            
-            for (const [color, count] of Object.entries(colors)) {
-                if (count > maxCount) {
-                    maxCount = count;
-                    chosenColor = color;
-                }
-            }
-            
-            return { 
-                action: 'play', 
-                cardId: card.id, 
-                chosenColor: chosenColor 
-            };
-        }
-        
-        // Se chegar aqui, não tem jogada (não deveria acontecer)
-        return { action: 'draw' };
+        // Resetar status de UNO para ambos os jogadores
+        this.hasCalledUno = false;
+        otherPlayer.hasCalledUno = false;
+    }
+    
+    // Serializar jogador para armazenamento/transferência
+    toJSON() {
+        return {
+            id: this.id,
+            name: this.name,
+            handCount: this.hand.length,
+            isAI: this.isAI,
+            isHost: this.isHost,
+            isReady: this.isReady,
+            hasCalledUno: this.hasCalledUno,
+            stats: { ...this.stats }
+        };
+    }
+    
+    // Versão simplificada para outros jogadores (sem mostrar as cartas)
+    toPublicJSON() {
+        return {
+            id: this.id,
+            name: this.name,
+            cardCount: this.hand.length,
+            isAI: this.isAI,
+            isHost: this.isHost,
+            isReady: this.isReady,
+            hasCalledUno: this.hasCalledUno
+        };
     }
 }

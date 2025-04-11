@@ -15,6 +15,7 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
 </head>
 <body>
     <!-- Tela de Início -->
@@ -25,20 +26,20 @@
         </div>
         <div class="menu-container">
             <button id="play-local-btn" class="menu-btn">
-                <span class="icon">🎮</span> Jogar no Dispositivo
+                <span class="icon">Jogar no Dispositivo</span>
             </button>
             <button id="play-online-btn" class="menu-btn">
-                <span class="icon">🌐</span> Jogar Online
+                <span class="icon">Jogar Online</span>
             </button>
             <button id="options-btn" class="menu-btn">
-                <span class="icon">⚙️</span> Opções
+                <span class="icon">Opções</span>
             </button>
             <button id="rules-btn" class="menu-btn">
-                <span class="icon">📋</span> Regras
+                <span class="icon">Regras</span>
             </button>
         </div>
         <div class="version-info">
-            v1.0.0 - Atualizado em 11/04/2025 16:05:43<br>
+            v1.0.0 - Atualizado em 11/04/2025 16:21:47<br>
             Desenvolvido por Duduxindev
         </div>
     </div>
@@ -49,22 +50,22 @@
         <div class="form-container">
             <div class="mode-selection-container">
                 <button class="mode-card selected" data-mode="normal">
-                    <div class="mode-icon">🎮</div>
+                    <div class="mode-icon">N</div>
                     <h3>Modo Normal</h3>
                     <p>Regras clássicas do UNO</p>
                 </button>
                 <button class="mode-card" data-mode="wild">
-                    <div class="mode-icon">🃏</div>
+                    <div class="mode-icon">W</div>
                     <h3>Modo Wild</h3>
                     <p>Mais cartas especiais</p>
                 </button>
                 <button class="mode-card" data-mode="no-mercy">
-                    <div class="mode-icon">😈</div>
+                    <div class="mode-icon">NM</div>
                     <h3>No Mercy</h3>
                     <p>Empilhe +2/+4 sem limites</p>
                 </button>
                 <button class="mode-card" data-mode="seven-zero">
-                    <div class="mode-icon">7️⃣</div>
+                    <div class="mode-icon">7-0</div>
                     <h3>Seven-Zero</h3>
                     <p>Regras especiais para 7 e 0</p>
                 </button>
@@ -116,12 +117,12 @@
         <h2>Jogar Online</h2>
         <div class="online-options">
             <button id="create-room-option" class="online-option">
-                <div class="option-icon">🏠</div>
+                <div class="option-icon">CR</div>
                 <h3>Criar Sala</h3>
                 <p>Crie uma nova sala e convide seus amigos</p>
             </button>
             <button id="join-room-option" class="online-option">
-                <div class="option-icon">🚪</div>
+                <div class="option-icon">ES</div>
                 <h3>Entrar em Sala</h3>
                 <p>Entre em uma sala existente com o código</p>
             </button>
@@ -219,7 +220,7 @@
                 <h3>Código da Sala:</h3>
                 <div class="code-display">
                     <span id="room-code-display">XXXX</span>
-                    <button id="copy-code-btn" class="icon-btn" title="Copiar código">📋</button>
+                    <button id="copy-code-btn" class="icon-btn" title="Copiar código">CP</button>
                 </div>
                 <p class="share-text">Compartilhe este código com seus amigos para que eles possam entrar na sala em seus dispositivos.</p>
             </div>
