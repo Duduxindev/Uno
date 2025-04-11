@@ -1,150 +1,172 @@
 /**
- * Classe do Jogador
- * Última atualização: 2025-04-11 16:26:03
+ * Sistema de jogadores para UNO Game
+ * Data: 2025-04-11 21:08:44
  * Desenvolvido por: Duduxindev
  */
+
 class Player {
     constructor(id, name, isAI = false) {
-        this.id = id;
-        this.name = name;
-        this.hand = [];
-        this.isAI = isAI;
-        this.isHost = false;
-        this.isReady = true;
-        this.hasCalledUno = false;
-        this.stats = {
-            cardsPlayed: 0,
-            specialCardsPlayed: 0,
-            cardsDrawn: 0,
-            uno: 0
-        };
+      this.id = id;
+      this.name = name;
+      this.isAI = isAI;
+      this.cards = [];
+      this.hasCalledUno = false;
+      this.skipTurn = false;
+      this.disconnected = false;
+      this.avatar = this.generateAvatar();
+      this.color = this.generateColor();
+      this.joinedAt = Date.now();
     }
     
-    // Adicionar carta à mão
+    // Gerar uma cor aleatória para o jogador
+    generateColor() {
+      const colors = [
+        '#3498db', '#2ecc71', '#e74c3c', '#f1c40f', 
+        '#9b59b6', '#1abc9c', '#e67e22', '#34495e'
+      ];
+      return colors[Math.floor(Math.random() * colors.length)];
+    }
+    
+    // Gerar um avatar aleatório para o jogador
+    generateAvatar() {
+      // Usar número aleatório como seed para consistência
+      const seed = this.id ? this.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) : Math.random();
+      return `https://avatars.dicebear.com/api/identicon/${seed}.svg`;
+    }
+    
+    // Adicionar uma carta à mão do jogador
     addCard(card) {
-        this.hand.push(card);
-        // Resetar status de UNO se o jogador tiver mais de uma carta
-        if (this.hand.length > 1) {
-            this.hasCalledUno = false;
-        }
+      this.cards.push(card);
+      this.hasCalledUno = false;
     }
     
-    // Adicionar várias cartas à mão
-    addCards(cards) {
-        this.hand = [...this.hand, ...cards];
-        // Resetar status de UNO se o jogador tiver mais de uma carta
-        if (this.hand.length > 1) {
-            this.hasCalledUno = false;
-        }
-    }
-    
-    // Remover carta da mão
+    // Remover uma carta da mão do jogador
     removeCard(cardId) {
-        const cardIndex = this.hand.findIndex(card => card.id === cardId);
-        if (cardIndex !== -1) {
-            const card = this.hand[cardIndex];
-            this.hand.splice(cardIndex, 1);
-            
-            // Atualizar estatísticas
-            this.stats.cardsPlayed++;
-            if (card.type !== 'number') {
-                this.stats.specialCardsPlayed++;
-            }
-            
-            return card;
-        }
-        return null;
+      const index = this.cards.findIndex(card => card.id === cardId);
+      if (index !== -1) {
+        return this.cards.splice(index, 1)[0];
+      }
+      return null;
     }
     
-    // Verificar se o jogador tem determinada carta
+    // Verificar se o jogador tem uma carta específica
     hasCard(cardId) {
-        return this.hand.some(card => card.id === cardId);
+      return this.cards.some(card => card.id === cardId);
     }
     
-    // Obter número de cartas na mão
-    getCardCount() {
-        return this.hand.length;
+    // Verificar se o jogador pode jogar uma carta específica na condição atual
+    canPlayCard(card, topCard, currentColor) {
+      // Curingas podem ser jogados a qualquer momento
+      if (card.type === 'wild') {
+        return true;
+      }
+      
+      // Mesma cor
+      if (card.color === currentColor) {
+        return true;
+      }
+      
+      // Mesmo valor/ação
+      if (topCard && card.value === topCard.value) {
+        return true;
+      }
+      
+      return false;
     }
     
-    // Chamar UNO
-    callUno() {
-        if (this.hand.length === 1) {
-            this.hasCalledUno = true;
-            this.stats.uno++;
-            return true;
+    // Obter cartas jogáveis
+    getPlayableCards(topCard, currentColor) {
+      return this.cards.filter(card => this.canPlayCard(card, topCard, currentColor));
+    }
+    
+    // Converter para formato para Firebase
+    toFirebase() {
+      return {
+        id: this.id,
+        name: this.name,
+        isAI: this.isAI,
+        avatar: this.avatar,
+        color: this.color,
+        cardCount: this.cards.length,
+        hasCalledUno: this.hasCalledUno,
+        disconnected: this.disconnected,
+        joinedAt: this.joinedAt
+      };
+    }
+    
+    // Criar jogador a partir de dados do Firebase
+    static fromFirebase(data) {
+      const player = new Player(data.id, data.name, data.isAI);
+      player.avatar = data.avatar;
+      player.color = data.color;
+      player.hasCalledUno = data.hasCalledUno || false;
+      player.disconnected = data.disconnected || false;
+      player.joinedAt = data.joinedAt || Date.now();
+      return player;
+    }
+  }
+  
+  // Classe para gerenciar jogadores no jogo
+  class PlayerManager {
+    constructor() {
+      this.players = [];
+      this.currentPlayerIndex = 0;
+      this.direction = 1; // 1 = clockwise, -1 = counter-clockwise
+    }
+    
+    // Adicionar um jogador
+    addPlayer(player) {
+      this.players.push(player);
+      return player;
+    }
+    
+    // Remover um jogador
+    removePlayer(playerId) {
+      const index = this.players.findIndex(p => p.id === playerId);
+      if (index !== -1) {
+        return this.players.splice(index, 1)[0];
+      }
+      return null;
+    }
+    
+    // Obter jogador por ID
+    getPlayer(playerId) {
+      return this.players.find(p => p.id === playerId);
+    }
+    
+    // Obter jogador atual
+    getCurrentPlayer() {
+      return this.players[this.currentPlayerIndex];
+    }
+    
+    // Avançar para o próximo jogador
+    nextPlayer() {
+      // Atualizar índice do jogador atual
+      this.currentPlayerIndex = (this.currentPlayerIndex + this.direction + this.players.length) % this.players.length;
+      return this.getCurrentPlayer();
+    }
+    
+    // Inverter direção do jogo
+    reverseDirection() {
+      this.direction *= -1;
+    }
+    
+    // Distribuir cartas para todos os jogadores
+    dealCards(deck, cardsPerPlayer = 7) {
+      this.players.forEach(player => {
+        for (let i = 0; i < cardsPerPlayer; i++) {
+          const card = deck.drawCard();
+          if (card) {
+            player.addCard(card);
+          }
         }
-        return false;
+      });
     }
     
-    // Verificar cartas jogáveis
-    getPlayableCards(topCard, currentColor, gameRules) {
-        return this.hand.filter(card => {
-            // Curingas sempre podem ser jogados
-            if (card.type === 'wild') {
-                return true;
-            }
-            
-            // Mesma cor
-            if (card.color === currentColor) {
-                return true;
-            }
-            
-            // Mesmo valor/símbolo
-            if (topCard && card.value === topCard.value) {
-                return true;
-            }
-            
-            // Regra de Jump-In (carta idêntica)
-            if (gameRules && gameRules.jumpIn && 
-                topCard && card.color === topCard.color && card.value === topCard.value) {
-                return true;
-            }
-            
-            return false;
-        });
+    // Verificar se há um vencedor
+    checkForWinner() {
+      return this.players.find(player => player.cards.length === 0);
     }
-    
-    // Limpar mão (para começar um novo jogo)
-    clearHand() {
-        this.hand = [];
-        this.hasCalledUno = false;
-    }
-    
-    // Trocar mão com outro jogador (regra do 7)
-    swapHandWith(otherPlayer) {
-        const tempHand = this.hand;
-        this.hand = otherPlayer.hand;
-        otherPlayer.hand = tempHand;
-        
-        // Resetar status de UNO para ambos os jogadores
-        this.hasCalledUno = false;
-        otherPlayer.hasCalledUno = false;
-    }
-    
-    // Serializar jogador para armazenamento/transferência
-    toJSON() {
-        return {
-            id: this.id,
-            name: this.name,
-            handCount: this.hand.length,
-            isAI: this.isAI,
-            isHost: this.isHost,
-            isReady: this.isReady,
-            hasCalledUno: this.hasCalledUno,
-            stats: { ...this.stats }
-        };
-    }
-    
-    // Versão simplificada para outros jogadores (sem mostrar as cartas)
-    toPublicJSON() {
-        return {
-            id: this.id,
-            name: this.name,
-            cardCount: this.hand.length,
-            isAI: this.isAI,
-            isHost: this.isHost,
-            isReady: this.isReady,
-            hasCalledUno: this.hasCalledUno
-        };
-    }
-}
+  }
+  
+  console.log("✅ Sistema de jogadores inicializado!");

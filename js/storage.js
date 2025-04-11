@@ -1,227 +1,129 @@
 /**
- * Gerenciamento de armazenamento local
- * Última atualização: 2025-04-11 16:43:14
+ * Gerenciamento de armazenamento local para UNO Game
+ * Data: 2025-04-11 21:08:44
  * Desenvolvido por: Duduxindev
  */
-class GameStorage {
-    constructor() {
-        this.storagePrefix = 'uno_game_';
-    }
+
+const Storage = {
+    // Chaves para armazenamento
+    keys: {
+      SESSION: 'unoSession',
+      SETTINGS: 'unoSettings',
+      STATS: 'unoStats',
+      HISTORY: 'unoHistory'
+    },
+    
+    // Salvar dados no localStorage
+    saveData: function(key, data) {
+      try {
+        localStorage.setItem(key, JSON.stringify(data));
+        return true;
+      } catch (error) {
+        console.error(`Erro ao salvar dados (${key}):`, error);
+        return false;
+      }
+    },
+    
+    // Obter dados do localStorage
+    getData: function(key) {
+      try {
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : null;
+      } catch (error) {
+        console.error(`Erro ao obter dados (${key}):`, error);
+        return null;
+      }
+    },
+    
+    // Remover dados do localStorage
+    removeData: function(key) {
+      try {
+        localStorage.removeItem(key);
+        return true;
+      } catch (error) {
+        console.error(`Erro ao remover dados (${key}):`, error);
+        return false;
+      }
+    },
+    
+    // Salvar dados da sessão
+    saveSession: function(data) {
+      return this.saveData(this.keys.SESSION, data);
+    },
+    
+    // Obter dados da sessão
+    getSession: function() {
+      return this.getData(this.keys.SESSION) || {};
+    },
+    
+    // Remover dados da sessão
+    clearSession: function() {
+      return this.removeData(this.keys.SESSION);
+    },
     
     // Salvar configurações
-    saveSettings(settings) {
-        try {
-            localStorage.setItem(this.storagePrefix + 'settings', JSON.stringify(settings));
-            return true;
-        } catch (error) {
-            console.error('Erro ao salvar configurações:', error);
-            return false;
-        }
-    }
+    saveSettings: function(settings) {
+      return this.saveData(this.keys.SETTINGS, settings);
+    },
     
     // Obter configurações
-    getSettings() {
-        try {
-            const defaultSettings = {
-                darkMode: false,
-                soundEffects: true,
-                backgroundMusic: true,
-                cardAnimation: true,
-                autoUno: false,
-                turnTimer: true
-            };
-            
-            const savedSettings = localStorage.getItem(this.storagePrefix + 'settings');
-            
-            if (!savedSettings) {
-                return defaultSettings;
-            }
-            
-            return { ...defaultSettings, ...JSON.parse(savedSettings) };
-        } catch (error) {
-            console.error('Erro ao carregar configurações:', error);
-            return {
-                darkMode: false,
-                soundEffects: true,
-                backgroundMusic: true,
-                cardAnimation: true,
-                autoUno: false,
-                turnTimer: true
-            };
-        }
-    }
+    getSettings: function() {
+      return this.getData(this.keys.SETTINGS) || {
+        soundEffects: true,
+        backgroundMusic: true,
+        cardAnimation: true,
+        darkMode: false,
+        autoUno: false,
+        turnTimer: true,
+        showPlayable: true
+      };
+    },
     
-    // Salvar estatísticas do jogador
-    saveStats(stats) {
-        try {
-            const currentStats = this.getStats();
-            const updatedStats = {
-                totalGames: currentStats.totalGames + 1,
-                wins: currentStats.wins + (stats.won ? 1 : 0),
-                cardsPlayed: currentStats.cardsPlayed + (stats.cardsPlayed || 0),
-                specialCardsPlayed: currentStats.specialCardsPlayed + (stats.specialCardsPlayed || 0),
-                unosCalled: currentStats.unosCalled + (stats.unosCalled || 0),
-                lastGameDate: new Date().toISOString(),
-                gameHistory: [
-                    {
-                        date: new Date().toISOString(),
-                        won: stats.won,
-                        mode: stats.mode,
-                        players: stats.playerCount,
-                        cardsPlayed: stats.cardsPlayed || 0
-                    },
-                    ...currentStats.gameHistory.slice(0, 9) // Manter apenas os últimos 10 jogos
-                ]
-            };
-            
-            localStorage.setItem(this.storagePrefix + 'stats', JSON.stringify(updatedStats));
-            return true;
-        } catch (error) {
-            console.error('Erro ao salvar estatísticas:', error);
-            return false;
-        }
-    }
+    // Salvar estatísticas
+    saveStats: function(stats) {
+      return this.saveData(this.keys.STATS, stats);
+    },
     
-    // Obter estatísticas do jogador
-    getStats() {
-        try {
-            const defaultStats = {
-                totalGames: 0,
-                wins: 0,
-                cardsPlayed: 0,
-                specialCardsPlayed: 0,
-                unosCalled: 0,
-                lastGameDate: null,
-                gameHistory: []
-            };
-            
-            const savedStats = localStorage.getItem(this.storagePrefix + 'stats');
-            
-            if (!savedStats) {
-                return defaultStats;
-            }
-            
-            return { ...defaultStats, ...JSON.parse(savedStats) };
-        } catch (error) {
-            console.error('Erro ao carregar estatísticas:', error);
-            return {
-                totalGames: 0,
-                wins: 0,
-                cardsPlayed: 0,
-                specialCardsPlayed: 0,
-                unosCalled: 0,
-                lastGameDate: null,
-                gameHistory: []
-            };
-        }
-    }
+    // Obter estatísticas
+    getStats: function() {
+      return this.getData(this.keys.STATS) || {
+        gamesPlayed: 0,
+        gamesWon: 0,
+        cardsPlayed: 0,
+        specialCardsPlayed: 0,
+        unosCalled: 0
+      };
+    },
     
-    // Salvar último nome de jogador utilizado
-    savePlayerName(name) {
-        try {
-            localStorage.setItem(this.storagePrefix + 'playerName', name);
-            return true;
-        } catch (error) {
-            console.error('Erro ao salvar nome do jogador:', error);
-            return false;
-        }
-    }
+    // Atualizar estatísticas
+    updateStats: function(newStats) {
+      const currentStats = this.getStats();
+      const updatedStats = { ...currentStats, ...newStats };
+      return this.saveStats(updatedStats);
+    },
     
-    // Obter último nome de jogador
-    getPlayerName() {
-        try {
-            return localStorage.getItem(this.storagePrefix + 'playerName') || '';
-        } catch (error) {
-            console.error('Erro ao obter nome do jogador:', error);
-            return '';
-        }
-    }
+    // Adicionar um jogo ao histórico
+    addGameToHistory: function(gameData) {
+      const history = this.getData(this.keys.HISTORY) || [];
+      
+      // Adicionar jogo ao início do histórico
+      history.unshift({
+        ...gameData,
+        timestamp: Date.now()
+      });
+      
+      // Manter apenas os últimos 20 jogos
+      if (history.length > 20) {
+        history.pop();
+      }
+      
+      return this.saveData(this.keys.HISTORY, history);
+    },
     
-    // Salvar informações da sessão atual
-    saveSessionInfo(roomCode, playerId) {
-        try {
-            const sessionInfo = { 
-                roomCode, 
-                playerId, 
-                timestamp: Date.now(),
-                version: '1.0.0'
-            };
-            
-            localStorage.setItem(this.storagePrefix + 'session', JSON.stringify(sessionInfo));
-            return true;
-        } catch (error) {
-            console.error('Erro ao salvar informações da sessão:', error);
-            return false;
-        }
+    // Obter histórico de jogos
+    getGameHistory: function() {
+      return this.getData(this.keys.HISTORY) || [];
     }
-    
-    // Obter informações da sessão
-    getSessionInfo() {
-        try {
-            const savedSession = localStorage.getItem(this.storagePrefix + 'session');
-            
-            if (!savedSession) {
-                return null;
-            }
-            
-            const session = JSON.parse(savedSession);
-            
-            // Verificar se a sessão expirou (24 horas)
-            if (Date.now() - session.timestamp > 24 * 60 * 60 * 1000) {
-                this.clearSessionInfo();
-                return null;
-            }
-            
-            return session;
-        } catch (error) {
-            console.error('Erro ao obter informações da sessão:', error);
-            return null;
-        }
-    }
-    
-    // Limpar informações da sessão
-    clearSessionInfo() {
-        try {
-            localStorage.removeItem(this.storagePrefix + 'session');
-            return true;
-        } catch (error) {
-            console.error('Erro ao limpar informações da sessão:', error);
-            return false;
-        }
-    }
-    
-    // Verificar se o armazenamento local está disponível
-    isStorageAvailable() {
-        try {
-            const test = '__storage_test__';
-            localStorage.setItem(test, test);
-            localStorage.removeItem(test);
-            return true;
-        } catch (e) {
-            return false;
-        }
-    }
-    
-    // Limpar todos os dados do jogo
-    clearAllData() {
-        try {
-            // Obter todas as chaves que começam com o prefixo
-            const keysToRemove = [];
-            
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key.startsWith(this.storagePrefix)) {
-                    keysToRemove.push(key);
-                }
-            }
-            
-            // Remover as chaves
-            keysToRemove.forEach(key => localStorage.removeItem(key));
-            
-            return true;
-        } catch (error) {
-            console.error('Erro ao limpar todos os dados:', error);
-            return false;
-        }
-    }
-}
+  };
+  
+  console.log("✅ Sistema de armazenamento inicializado!");

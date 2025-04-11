@@ -1,674 +1,410 @@
 /**
- * Gerenciamento de Salas com Firebase
- * Última atualização: 2025-04-11 17:11:13
+ * Sistema de salas para UNO Game
+ * Data: 2025-04-11 21:08:44
  * Desenvolvido por: Duduxindev
  */
-class RoomManager {
+
+class Room {
+    constructor(code, host, maxPlayers = 4, gameMode = 'normal', customRules = {}) {
+      this.code = code;
+      this.host = host;
+      this.players = {}; // Mapeado por ID do jogador
+      this.maxPlayers = maxPlayers;
+      this.gameMode = gameMode;
+      this.customRules = customRules;
+      this.status = 'waiting'; // 'waiting', 'playing', 'finished'
+      this.createdAt = Date.now();
+      this.updatedAt = Date.now();
+      this.game = null;
+      this.messages = [];
+    }
+    
+    // Adicionar um jogador à sala
+    addPlayer(player) {
+      // Verificar se a sala está cheia
+      if (Object.keys(this.players).length >= this.maxPlayers) {
+        throw new Error("A sala está cheia.");
+      }
+      
+      // Verificar se o jogador já está na sala
+      if (this.players[player.id]) {
+        throw new Error("Jogador já está na sala.");
+      }
+      
+      // Adicionar jogador
+      this.players[player.id] = player;
+      this.updatedAt = Date.now();
+      
+      return player;
+    }
+    
+    // Remover um jogador da sala
+    removePlayer(playerId) {
+      // Verificar se o jogador está na sala
+      if (!this.players[playerId]) {
+        throw new Error("Jogador não encontrado na sala.");
+      }
+      
+      // Remover jogador
+      const player = this.players[playerId];
+      delete this.players[playerId];
+      this.updatedAt = Date.now();
+      
+      // Se o host saiu, definir um novo host
+      if (this.host === playerId && Object.keys(this.players).length > 0) {
+        this.host = Object.keys(this.players)[0];
+      }
+      
+      return player;
+    }
+    
+    // Obter um jogador da sala
+    getPlayer(playerId) {
+      return this.players[playerId];
+    }
+    
+    // Verificar se a sala está cheia
+    isFull() {
+      return Object.keys(this.players).length >= this.maxPlayers;
+    }
+    
+    // Verificar se um jogador é o anfitrião
+    isHost(playerId) {
+      return this.host === playerId;
+    }
+    
+    // Iniciar o jogo
+    startGame(gameState) {
+      // Verificar se há jogadores suficientes
+      if (Object.keys(this.players).length < 2) {
+        throw new Error("São necessários pelo menos 2 jogadores para iniciar o jogo.");
+      }
+      
+      // Verificar se a sala já está jogando
+      if (this.status === 'playing') {
+        throw new Error("O jogo já foi iniciado.");
+      }
+      
+      // Atualizar status
+      this.status = 'playing';
+      this.game = gameState;
+      this.updatedAt = Date.now();
+    }
+    
+    // Finalizar o jogo
+    endGame(winner) {
+      this.status = 'finished';
+      this.game.winner = winner;
+      this.game.finishedAt = Date.now();
+      this.updatedAt = Date.now();
+    }
+    
+    // Adicionar mensagem ao chat
+    addMessage(message) {
+      this.messages.push(message);
+      
+      // Manter apenas as últimas 50 mensagens
+      if (this.messages.length > 50) {
+        this.messages.shift();
+      }
+      
+      this.updatedAt = Date.now();
+      return message;
+    }
+    
+    // Converter para formato para Firebase
+    toFirebase() {
+      const playersForFirebase = {};
+      
+      // Converter jogadores para formato Firebase
+      Object.keys(this.players).forEach(playerId => {
+        playersForFirebase[playerId] = this.players[playerId].toFirebase();
+      });
+      
+      return {
+        code: this.code,
+        host: this.host,
+        players: playersForFirebase,
+        maxPlayers: this.maxPlayers,
+        gameMode: this.gameMode,
+        customRules: this.customRules,
+        status: this.status,
+        createdAt: this.createdAt,
+        updatedAt: this.updatedAt,
+        game: this.game,
+        messages: this.messages
+      };
+    }
+    
+    // Criar sala a partir de dados do Firebase
+    static fromFirebase(data) {
+      const room = new Room(
+        data.code,
+        data.host,
+        data.maxPlayers,
+        data.gameMode,
+        data.customRules
+      );
+      
+      room.status = data.status;
+      room.createdAt = data.createdAt;
+      room.updatedAt = data.updatedAt;
+      room.game = data.game;
+      room.messages = data.messages || [];
+      
+      // Converter jogadores de volta do Firebase
+      if (data.players) {
+        Object.keys(data.players).forEach(playerId => {
+          room.players[playerId] = Player.fromFirebase(data.players[playerId]);
+        });
+      }
+      
+      return room;
+    }
+  }
+  
+  // Classe para gerenciar salas online
+  class RoomManager {
     constructor() {
-        this.currentRoomCode = null;
-        this.currentPlayerId = null;
-        this.roomsRef = database.ref('rooms');
-        this.eventHandlers = {};
-        this.chatManager = new ChatManager(this);
-        this.connectionTimeout = 10000; // 10 segundos
-        this.reconnectAttempts = 0;
-        this.maxReconnectAttempts = 5;
-        this.heartbeatInterval = null;
-    }
-    
-    // Gerar código de sala aleatório
-    generateRoomCode() {
-        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-        let code = '';
-        
-        for (let i = 0; i < 4; i++) {
-            code += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        
-        return code;
-    }
-    
-    // Gerar ID de jogador único
-    generatePlayerId() {
-        return Date.now().toString(36) + Math.random().toString(36).substr(2);
+      this.currentRoom = null;
+      this.roomListener = null;
     }
     
     // Criar uma nova sala
-    async createRoom(hostName, gameMode, maxPlayers, customRules) {
-        // Validar nome
-        if (!hostName || hostName.trim() === '') {
-            return { success: false, error: 'Nome do anfitrião é obrigatório.' };
-        }
+    async createRoom(host, maxPlayers, gameMode, customRules) {
+      try {
+        // Gerar código para a sala
+        const roomCode = FirebaseUtil.generateRoomCode();
         
-        try {
-            // Gerar código de sala único
-            let roomCode = this.generateRoomCode();
-            let roomExists = true;
-            
-            // Verificar se o código já existe
-            while (roomExists) {
-                const snapshot = await this.roomsRef.child(roomCode).once('value');
-                roomExists = snapshot.exists();
-                if (roomExists) {
-                    roomCode = this.generateRoomCode();
-                }
-            }
-            
-            // Criar ID do host
-            const hostId = this.generatePlayerId();
-            
-            // Criar objeto da sala
-            const room = {
-                code: roomCode,
-                host: hostId,
-                gameMode: gameMode,
-                maxPlayers: parseInt(maxPlayers),
-                customRules: customRules,
-                status: 'waiting',
-                players: {},
-                messages: {},
-                createdAt: firebase.database.ServerValue.TIMESTAMP,
-                lastActivity: firebase.database.ServerValue.TIMESTAMP
-            };
-            
-            // Adicionar o host aos jogadores
-            room.players[hostId] = {
-                id: hostId,
-                name: hostName,
-                isHost: true,
-                isReady: true,
-                joinedAt: firebase.database.ServerValue.TIMESTAMP,
-                isOnline: true,
-                lastHeartbeat: firebase.database.ServerValue.TIMESTAMP
-            };
-            
-            // Salvar a sala no Firebase
-            await this.roomsRef.child(roomCode).set(room);
-            this.currentRoomCode = roomCode;
-            this.currentPlayerId = hostId;
-            
-            // Salvar localmente
-            const storage = new GameStorage();
-            storage.saveSessionInfo(roomCode, hostId);
-            storage.savePlayerName(hostName);
-            
-            // Inicializar chat
-            this.chatManager.init(roomCode, hostName, hostId);
-            
-            // Iniciar heartbeat para manter presença
-            this.startHeartbeat();
-            
-            // Adicionar mensagem de boas-vindas ao chat
-            setTimeout(() => {
-                this.chatManager.sendSystemMessage(`Bem-vindo à sala ${roomCode}! Compartilhe este código com seus amigos para que eles possam entrar.`);
-            }, 1000);
-            
-            return { 
-                success: true, 
-                roomCode: roomCode, 
-                playerId: hostId 
-            };
-        } catch (error) {
-            console.error('Erro ao criar sala:', error);
-            return { 
-                success: false, 
-                error: 'Falha ao criar sala. Tente novamente.' 
-            };
-        }
+        // Criar sala
+        const room = new Room(roomCode, host.id, maxPlayers, gameMode, customRules);
+        room.addPlayer(host);
+        
+        // Salvar sala no Firebase
+        await firebase.database().ref(`rooms/${roomCode}`).set(room.toFirebase());
+        
+        // Configurar listener para mudanças na sala
+        this.setupRoomListener(roomCode);
+        
+        // Salvar dados da sessão
+        Storage.saveSession({
+          roomCode: roomCode,
+          playerId: host.id,
+          isHost: true
+        });
+        
+        this.currentRoom = room;
+        
+        return room;
+      } catch (error) {
+        console.error("Erro ao criar sala:", error);
+        throw error;
+      }
     }
     
     // Entrar em uma sala existente
-    async joinRoom(roomCode, playerName) {
-        // Validar nome e código
-        if (!playerName || playerName.trim() === '') {
-            return { success: false, error: 'Nome do jogador é obrigatório.' };
+    async joinRoom(roomCode, player) {
+      try {
+        // Verificar se a sala existe
+        const roomExists = await FirebaseUtil.checkRoomExists(roomCode);
+        if (!roomExists) {
+          throw new Error(`Sala ${roomCode} não encontrada.`);
         }
         
-        if (!roomCode || roomCode.trim() === '') {
-            return { success: false, error: 'Código da sala é obrigatório.' };
+        // Obter dados da sala
+        const snapshot = await firebase.database().ref(`rooms/${roomCode}`).once('value');
+        const roomData = snapshot.val();
+        
+        // Verificar se a sala está cheia
+        if (Object.keys(roomData.players || {}).length >= roomData.maxPlayers) {
+          throw new Error("A sala está cheia.");
         }
         
-        roomCode = roomCode.toUpperCase();
-        
-        try {
-            // Verificar se a sala existe
-            const roomSnapshot = await this.roomsRef.child(roomCode).once('value');
-            const roomData = roomSnapshot.val();
-            
-            if (!roomData) {
-                return { 
-                    success: false, 
-                    error: 'Sala não encontrada. Verifique o código e tente novamente.' 
-                };
-            }
-            
-            // Verificar se a sala está disponível
-            if (roomData.status !== 'waiting') {
-                return { 
-                    success: false, 
-                    error: 'Esta sala já começou o jogo ou foi encerrada.' 
-                };
-            }
-            
-            // Verificar se a sala está cheia
-            const playerCount = Object.keys(roomData.players || {}).length;
-            if (playerCount >= roomData.maxPlayers) {
-                return { 
-                    success: false, 
-                    error: 'Esta sala está cheia.' 
-                };
-            }
-            
-            // Gerar ID do jogador
-            const playerId = this.generatePlayerId();
-            
-            // Adicionar jogador à sala
-            const playerData = {
-                id: playerId,
-                name: playerName,
-                isHost: false,
-                isReady: true,
-                joinedAt: firebase.database.ServerValue.TIMESTAMP,
-                isOnline: true,
-                lastHeartbeat: firebase.database.ServerValue.TIMESTAMP
-            };
-            
-            await this.roomsRef.child(`${roomCode}/players/${playerId}`).set(playerData);
-            await this.roomsRef.child(`${roomCode}/lastActivity`).set(firebase.database.ServerValue.TIMESTAMP);
-            
-            this.currentRoomCode = roomCode;
-            this.currentPlayerId = playerId;
-            
-            // Salvar localmente
-            const storage = new GameStorage();
-            storage.saveSessionInfo(roomCode, playerId);
-            storage.savePlayerName(playerName);
-            
-            // Inicializar chat
-            this.chatManager.init(roomCode, playerName, playerId);
-            
-            // Iniciar heartbeat para manter presença
-            this.startHeartbeat();
-            
-            return { 
-                success: true, 
-                roomCode: roomCode, 
-                playerId: playerId 
-            };
-        } catch (error) {
-            console.error('Erro ao entrar na sala:', error);
-            return { 
-                success: false, 
-                error: 'Falha ao entrar na sala. Tente novamente.' 
-            };
+        // Verificar status da sala
+        if (roomData.status !== 'waiting') {
+          throw new Error("Esta sala já está jogando ou finalizada.");
         }
+        
+        // Adicionar jogador à sala
+        const playerFirebase = player.toFirebase();
+        await firebase.database().ref(`rooms/${roomCode}/players/${player.id}`).set(playerFirebase);
+        
+        // Configurar listener para mudanças na sala
+        this.setupRoomListener(roomCode);
+        
+        // Salvar dados da sessão
+        Storage.saveSession({
+          roomCode: roomCode,
+          playerId: player.id,
+          isHost: false
+        });
+        
+        // Converter roomData para objeto Room
+        this.currentRoom = Room.fromFirebase(roomData);
+        
+        return this.currentRoom;
+      } catch (error) {
+        console.error("Erro ao entrar na sala:", error);
+        throw error;
+      }
     }
     
-    // Sair de uma sala
+    // Sair da sala atual
     async leaveRoom() {
-        if (!this.currentRoomCode || !this.currentPlayerId) {
-            return { success: false, error: 'Você não está em uma sala.' };
+      try {
+        const session = Storage.getSession();
+        
+        if (!session.roomCode || !session.playerId) {
+          throw new Error("Sessão não encontrada.");
         }
         
-        try {
-            // Parar heartbeat
-            this.stopHeartbeat();
-            
-            // Verificar se a sala existe
-            const roomSnapshot = await this.roomsRef.child(this.currentRoomCode).once('value');
-            const roomData = roomSnapshot.val();
-            
-            if (!roomData) {
-                // Limpar dados locais
-                this.clearLocalData();
-                return { success: true };
-            }
-            
-            // Enviar mensagem informando que o jogador saiu
-            const playerName = roomData.players[this.currentPlayerId]?.name || "Jogador";
-            this.chatManager.sendSystemMessage(`${playerName} saiu da sala.`);
-            
-            // Remover jogador da sala
-            await this.roomsRef.child(`${this.currentRoomCode}/players/${this.currentPlayerId}`).remove();
-            
-            // Verificar se a sala ficou vazia
-            const playerCountSnapshot = await this.roomsRef.child(`${this.currentRoomCode}/players`).once('value');
-            const players = playerCountSnapshot.val() || {};
-            const playerCount = Object.keys(players).length;
-            
-            if (playerCount === 0) {
-                // Se a sala ficou vazia, removê-la
-                await this.roomsRef.child(this.currentRoomCode).remove();
-            } else if (roomData.host === this.currentPlayerId) {
-                // Se o host saiu, transferir para outro jogador
-                const newHostId = Object.keys(players)[0];
-                await this.roomsRef.child(`${this.currentRoomCode}/host`).set(newHostId);
-                await this.roomsRef.child(`${this.currentRoomCode}/players/${newHostId}/isHost`).set(true);
-                
-                // Enviar mensagem sobre transferência de host
-                const newHostName = players[newHostId]?.name || "Novo anfitrião";
-                this.chatManager.sendSystemMessage(`${newHostName} é o novo anfitrião da sala.`);
-            }
-            
-            // Atualizar timestamp de última atividade
-            if (playerCount > 0) {
-                await this.roomsRef.child(`${this.currentRoomCode}/lastActivity`).set(firebase.database.ServerValue.TIMESTAMP);
-            }
-            
-            // Limpar dados locais
-            this.clearLocalData();
-            
-            // Limpar chat
-            this.chatManager.cleanup();
-            
-            return { success: true };
-        } catch (error) {
-            console.error('Erro ao sair da sala:', error);
-            return { success: false, error: 'Falha ao sair da sala. Tente novamente.' };
+        // Remover jogador da sala
+        await firebase.database().ref(`rooms/${session.roomCode}/players/${session.playerId}`).remove();
+        
+        // Se era o host e o jogo não estava em andamento, excluir a sala
+        if (session.isHost && this.currentRoom && this.currentRoom.status === 'waiting') {
+          await firebase.database().ref(`rooms/${session.roomCode}`).remove();
         }
+        
+        // Remover listener da sala
+        this.removeRoomListener();
+        
+        // Limpar dados da sessão
+        Storage.clearSession();
+        
+        this.currentRoom = null;
+        
+        return true;
+      } catch (error) {
+        console.error("Erro ao sair da sala:", error);
+        throw error;
+      }
     }
     
-        // Iniciar jogo
-        async startGame() {
-            if (!this.currentRoomCode || !this.currentPlayerId) {
-                return { success: false, error: 'Você não está em uma sala.' };
-            }
-            
-            try {
-                // Verificar se a sala existe
-                const roomSnapshot = await this.roomsRef.child(this.currentRoomCode).once('value');
-                const roomData = roomSnapshot.val();
-                
-                if (!roomData) {
-                    return { success: false, error: 'Sala não encontrada.' };
-                }
-                
-                // Verificar se é o host
-                if (roomData.host !== this.currentPlayerId) {
-                    return { success: false, error: 'Apenas o anfitrião pode iniciar o jogo.' };
-                }
-                
-                // Verificar se há jogadores suficientes
-                const playerCount = Object.keys(roomData.players || {}).length;
-                if (playerCount < 2) {
-                    return { success: false, error: 'São necessários pelo menos 2 jogadores para iniciar.' };
-                }
-                
-                // Verificar se todos os jogadores estão online
-                const players = roomData.players;
-                const offlinePlayers = [];
-                
-                for (const playerId in players) {
-                    if (!players[playerId].isOnline) {
-                        offlinePlayers.push(players[playerId].name);
-                    }
-                }
-                
-                if (offlinePlayers.length > 0) {
-                    return { 
-                        success: false, 
-                        error: `Alguns jogadores estão offline: ${offlinePlayers.join(', ')}. Aguarde eles reconectarem ou remova-os da sala.` 
-                    };
-                }
-                
-                // Configurar o jogo
-                const gameConfig = {
-                    gameMode: roomData.gameMode,
-                    customRules: roomData.customRules,
-                    players: Object.values(roomData.players).map(p => ({
-                        id: p.id,
-                        name: p.name,
-                        isAI: false
-                    })),
-                    startTime: firebase.database.ServerValue.TIMESTAMP
-                };
-                
-                // Atualizar status da sala e adicionar configuração do jogo
-                await this.roomsRef.child(`${this.currentRoomCode}/status`).set('playing');
-                await this.roomsRef.child(`${this.currentRoomCode}/gameStartedAt`).set(firebase.database.ServerValue.TIMESTAMP);
-                await this.roomsRef.child(`${this.currentRoomCode}/gameConfig`).set(gameConfig);
-                
-                // Enviar mensagem do sistema sobre início do jogo
-                this.chatManager.sendSystemMessage('O jogo foi iniciado! Boa sorte a todos!');
-                
-                return { success: true, gameConfig };
-            } catch (error) {
-                console.error('Erro ao iniciar jogo:', error);
-                return { success: false, error: 'Falha ao iniciar o jogo. Tente novamente.' };
-            }
+    // Iniciar o jogo na sala atual
+    async startGame(gameState) {
+      try {
+        const session = Storage.getSession();
+        
+        if (!session.roomCode || !session.isHost) {
+          throw new Error("Apenas o anfitrião pode iniciar o jogo.");
         }
         
-        // Observar mudanças em uma sala
-        observeRoom(roomCode, callback) {
-            if (!roomCode) return null;
-            
-            const roomRef = this.roomsRef.child(roomCode);
-            
-            // Criar um identificador único para este listener
-            const handlerId = 'room_' + Date.now();
-            
-            // Salvar a referência ao listener
-            const handler = roomRef.on('value', snapshot => {
-                const roomData = snapshot.val();
-                
-                // Se a sala não existir mais
-                if (!roomData) {
-                    console.log(`Sala ${roomCode} não existe mais.`);
-                    this.stopObserving(handlerId);
-                    this.clearLocalData();
-                    
-                    // Redirecionar para tela inicial após alguns segundos
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 5000);
-                    
-                    return;
-                }
-                
-                callback(roomData);
-            });
-            
-            this.eventHandlers[handlerId] = {
-                ref: roomRef,
-                event: 'value',
-                handler: handler
-            };
-            
-            return handlerId;
+        // Verificar se a sala existe
+        const roomExists = await FirebaseUtil.checkRoomExists(session.roomCode);
+        if (!roomExists) {
+          throw new Error("Sala não encontrada.");
         }
         
-        // Observar mudanças no jogo
-        observeGame(roomCode, callback) {
-            if (!roomCode) return null;
-            
-            const gameRef = this.roomsRef.child(`${roomCode}/game`);
-            
-            // Criar um identificador único para este listener
-            const handlerId = 'game_' + Date.now();
-            
-            // Salvar a referência ao listener
-            const handler = gameRef.on('value', snapshot => {
-                const gameData = snapshot.val();
-                callback(gameData);
-            });
-            
-            this.eventHandlers[handlerId] = {
-                ref: gameRef,
-                event: 'value',
-                handler: handler
-            };
-            
-            return handlerId;
-        }
+        // Atualizar status da sala para 'playing'
+        await firebase.database().ref(`rooms/${session.roomCode}`).update({
+          status: 'playing',
+          game: gameState,
+          updatedAt: firebase.database.ServerValue.TIMESTAMP
+        });
         
-        // Parar de observar mudanças
-        stopObserving(handlerId) {
-            if (this.eventHandlers[handlerId]) {
-                const { ref, event, handler } = this.eventHandlers[handlerId];
-                ref.off(event, handler);
-                delete this.eventHandlers[handlerId];
-            }
-        }
-        
-        // Atualizar status de presença do jogador
-        async updatePresence(isOnline = true) {
-            if (!this.currentRoomCode || !this.currentPlayerId) return;
-            
-            try {
-                const now = firebase.database.ServerValue.TIMESTAMP;
-                
-                await this.roomsRef.child(`${this.currentRoomCode}/players/${this.currentPlayerId}/isOnline`).set(isOnline);
-                await this.roomsRef.child(`${this.currentRoomCode}/players/${this.currentPlayerId}/lastHeartbeat`).set(now);
-            } catch (error) {
-                console.error('Erro ao atualizar presença:', error);
-            }
-        }
-        
-        // Iniciar heartbeat para manter presença
-        startHeartbeat() {
-            // Parar heartbeat anterior se existir
-            this.stopHeartbeat();
-            
-            // Atualizar presença imediatamente
-            this.updatePresence(true);
-            
-            // Configurar heartbeat a cada 30 segundos
-            this.heartbeatInterval = setInterval(() => {
-                this.updatePresence(true);
-            }, 30000);
-            
-            // Configurar evento para quando o usuário fechar a página
-            window.addEventListener('beforeunload', this.handleBeforeUnload.bind(this));
-        }
-        
-        // Parar heartbeat
-        stopHeartbeat() {
-            if (this.heartbeatInterval) {
-                clearInterval(this.heartbeatInterval);
-                this.heartbeatInterval = null;
-            }
-            
-            window.removeEventListener('beforeunload', this.handleBeforeUnload.bind(this));
-        }
-        
-        // Tratar evento de fechar a página
-        handleBeforeUnload() {
-            this.updatePresence(false);
-        }
-        
-        // Verificar jogadores offline
-        async checkOfflinePlayers() {
-            if (!this.currentRoomCode || !this.currentPlayerId) return;
-            
-            try {
-                const now = Date.now();
-                const roomRef = this.roomsRef.child(this.currentRoomCode);
-                
-                // Obter dados da sala
-                const roomSnapshot = await roomRef.once('value');
-                const roomData = roomSnapshot.val();
-                
-                if (!roomData || !roomData.players) return;
-                
-                // Verificar se o usuário atual é o host
-                if (roomData.host !== this.currentPlayerId) return;
-                
-                // Verificar cada jogador
-                for (const playerId in roomData.players) {
-                    const player = roomData.players[playerId];
-                    
-                    // Pular se for o host
-                    if (playerId === this.currentPlayerId) continue;
-                    
-                    // Verificar se o último heartbeat foi há mais de 1 minuto
-                    if (player.lastHeartbeat && (now - player.lastHeartbeat > 60000)) {
-                        // Jogador offline há mais de 1 minuto
-                        if (player.isOnline) {
-                            // Marcar como offline
-                            await roomRef.child(`players/${playerId}/isOnline`).set(false);
-                            
-                            // Enviar mensagem sobre jogador offline
-                            this.chatManager.sendSystemMessage(`${player.name} está offline.`);
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error('Erro ao verificar jogadores offline:', error);
-            }
-        }
-        
-        // Remover jogador da sala (apenas para o host)
-        async removePlayer(playerId) {
-            if (!this.currentRoomCode || !this.currentPlayerId) {
-                return { success: false, error: 'Você não está em uma sala.' };
-            }
-            
-            try {
-                // Verificar se a sala existe
-                const roomSnapshot = await this.roomsRef.child(this.currentRoomCode).once('value');
-                const roomData = roomSnapshot.val();
-                
-                if (!roomData) {
-                    return { success: false, error: 'Sala não encontrada.' };
-                }
-                
-                // Verificar se é o host
-                if (roomData.host !== this.currentPlayerId) {
-                    return { success: false, error: 'Apenas o anfitrião pode remover jogadores.' };
-                }
-                
-                // Verificar se o jogador existe
-                if (!roomData.players[playerId]) {
-                    return { success: false, error: 'Jogador não encontrado.' };
-                }
-                
-                // Não pode remover a si mesmo
-                if (playerId === this.currentPlayerId) {
-                    return { success: false, error: 'Você não pode remover a si mesmo. Use a opção de sair da sala.' };
-                }
-                
-                // Obter nome do jogador
-                const playerName = roomData.players[playerId].name;
-                
-                // Remover jogador
-                await this.roomsRef.child(`${this.currentRoomCode}/players/${playerId}`).remove();
-                
-                // Enviar mensagem do sistema
-                this.chatManager.sendSystemMessage(`${playerName} foi removido da sala pelo anfitrião.`);
-                
-                return { success: true, playerName };
-            } catch (error) {
-                console.error('Erro ao remover jogador:', error);
-                return { success: false, error: 'Falha ao remover jogador. Tente novamente.' };
-            }
-        }
-        
-        // Recuperar sala atual se estiver armazenada localmente
-        async reconnectToRoom() {
-            // Obter informações da sessão
-            const storage = new GameStorage();
-            const sessionInfo = storage.getSessionInfo();
-            
-            if (!sessionInfo || !sessionInfo.roomCode || !sessionInfo.playerId) {
-                return { success: false };
-            }
-            
-            const roomCode = sessionInfo.roomCode;
-            const playerId = sessionInfo.playerId;
-            
-            try {
-                // Verificar se a sala ainda existe
-                const roomSnapshot = await this.roomsRef.child(roomCode).once('value');
-                const roomData = roomSnapshot.val();
-                
-                if (!roomData) {
-                    storage.clearSessionInfo();
-                    return { success: false };
-                }
-                
-                // Verificar se o jogador ainda está na sala
-                const playerSnapshot = await this.roomsRef.child(`${roomCode}/players/${playerId}`).once('value');
-                
-                if (!playerSnapshot.exists()) {
-                    storage.clearSessionInfo();
-                    return { success: false };
-                }
-                
-                const playerData = playerSnapshot.val();
-                
-                // Atualizar dados locais
-                this.currentRoomCode = roomCode;
-                this.currentPlayerId = playerId;
-                
-                // Atualizar status do jogador
-                await this.roomsRef.child(`${roomCode}/players/${playerId}/isOnline`).set(true);
-                await this.roomsRef.child(`${roomCode}/players/${playerId}/lastHeartbeat`).set(firebase.database.ServerValue.TIMESTAMP);
-                
-                // Iniciar heartbeat
-                this.startHeartbeat();
-                
-                // Inicializar chat
-                this.chatManager.init(roomCode, playerData.name, playerId);
-                
-                // Enviar mensagem sobre reconexão
-                this.chatManager.sendSystemMessage(`${playerData.name} reconectou à sala.`);
-                
-                return { 
-                    success: true, 
-                    roomCode: roomCode, 
-                    playerId: playerId,
-                    playerName: playerData.name,
-                    room: roomData
-                };
-            } catch (error) {
-                console.error('Erro ao reconectar à sala:', error);
-                storage.clearSessionInfo();
-                return { success: false };
-            }
-        }
-        
-        // Limpar dados locais
-        clearLocalData() {
-            const storage = new GameStorage();
-            storage.clearSessionInfo();
-            
-            this.currentRoomCode = null;
-            this.currentPlayerId = null;
-        }
-        
-        // Obter dados do jogador atual
-        getCurrentPlayerInfo() {
-            return {
-                roomCode: this.currentRoomCode,
-                playerId: this.currentPlayerId
-            };
-        }
-        
-        // Enviar ação de jogo
-        async sendGameAction(action, data) {
-            if (!this.currentRoomCode || !this.currentPlayerId) {
-                return { success: false, error: 'Você não está em uma sala.' };
-            }
-            
-            try {
-                const actionData = {
-                    action,
-                    playerId: this.currentPlayerId,
-                    timestamp: firebase.database.ServerValue.TIMESTAMP,
-                    ...data
-                };
-                
-                // Enviar ação para o Firebase
-                await this.roomsRef.child(`${this.currentRoomCode}/gameActions`).push(actionData);
-                
-                return { success: true };
-            } catch (error) {
-                console.error('Erro ao enviar ação de jogo:', error);
-                return { success: false, error: 'Falha ao enviar ação. Tente novamente.' };
-            }
-        }
-        
-        // Observar ações do jogo
-        observeGameActions(roomCode, callback) {
-            if (!roomCode) return null;
-            
-            const actionsRef = this.roomsRef.child(`${roomCode}/gameActions`);
-            
-            // Criar um identificador único para este listener
-            const handlerId = 'actions_' + Date.now();
-            
-            // Salvar a referência ao listener
-            const handler = actionsRef.on('child_added', snapshot => {
-                const action = snapshot.val();
-                callback(action);
-            });
-            
-            this.eventHandlers[handlerId] = {
-                ref: actionsRef,
-                event: 'child_added',
-                handler: handler
-            };
-            
-            return handlerId;
-        }
+        return true;
+      } catch (error) {
+        console.error("Erro ao iniciar jogo:", error);
+        throw error;
+      }
     }
+    
+    // Configurar listener para mudanças na sala
+    setupRoomListener(roomCode) {
+      // Remover listener anterior se existir
+      this.removeRoomListener();
+      
+      // Criar novo listener
+      this.roomListener = firebase.database().ref(`rooms/${roomCode}`).on('value', snapshot => {
+        const roomData = snapshot.val();
+        
+        // Verificar se a sala ainda existe
+        if (!roomData) {
+          console.log(`Sala ${roomCode} não existe mais.`);
+          
+          // Mostrar notificação ao usuário
+          const toast = document.getElementById('toast');
+          if (toast) {
+            toast.textContent = "A sala foi encerrada pelo anfitrião.";
+            toast.className = 'toast show error';
+            
+            setTimeout(() => {
+              toast.className = 'toast';
+            }, 5000);
+          }
+          
+          // Redirecionar para a tela inicial
+          if (window.showScreen) {
+            window.showScreen('start-screen');
+          }
+          
+          // Limpar dados da sessão
+          Storage.clearSession();
+          
+          this.removeRoomListener();
+          this.currentRoom = null;
+          return;
+        }
+        
+        // Atualizar sala atual
+        this.currentRoom = Room.fromFirebase(roomData);
+        
+        // Disparar evento de atualização da sala
+        const event = new CustomEvent('roomUpdate', {
+          detail: { room: this.currentRoom }
+        });
+        document.dispatchEvent(event);
+        
+        // Verificar se o jogo foi iniciado
+        if (this.currentRoom.status === 'playing' && window.location.hash !== '#game') {
+          if (window.showScreen) {
+            window.showScreen('game-screen');
+          }
+        }
+      });
+    }
+    
+    // Remover listener da sala
+    removeRoomListener() {
+      const session = Storage.getSession();
+      
+      if (session.roomCode && this.roomListener) {
+        firebase.database().ref(`rooms/${session.roomCode}`).off('value', this.roomListener);
+        this.roomListener = null;
+      }
+    }
+    
+    // Enviar mensagem para o chat da sala
+    async sendMessage(message) {
+      try {
+        const session = Storage.getSession();
+        
+        if (!session.roomCode || !session.playerId) {
+          throw new Error("Sessão não encontrada.");
+        }
+        
+        // Criar objeto de mensagem
+        const messageObj = {
+          id: Date.now().toString(),
+          playerId: session.playerId,
+          playerName: this.currentRoom.players[session.playerId].name,
+          text: message,
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        };
+        
+        // Adicionar mensagem ao chat da sala
+        await firebase.database().ref(`rooms/${session.roomCode}/messages`).push(messageObj);
+        
+        return messageObj;
+      } catch (error) {
+        console.error("Erro ao enviar mensagem:", error);
+        throw error;
+      }
+    }
+  }
+  
+  // Inicializar gerenciador de salas global
+  const roomManager = new RoomManager();
+  
+  console.log("✅ Sistema de salas inicializado!");

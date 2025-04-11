@@ -1,184 +1,233 @@
 /**
- * Implementação dos modos de jogo UNO
- * Última atualização: 2025-04-11 16:40:23
+ * Modos de jogo para UNO Game
+ * Data: 2025-04-11 21:08:44
  * Desenvolvido por: Duduxindev
  */
-class GameMode {
-    constructor(name, options = {}) {
-        this.name = name;
-        this.options = this.getDefaultOptions();
-        
-        // Aplicar opções fornecidas
-        for (const [key, value] of Object.entries(options)) {
-            if (this.options.hasOwnProperty(key)) {
-                this.options[key] = value;
-            }
-        }
-    }
-    
-    // Opções padrão para todos os modos
-    getDefaultOptions() {
-        return {
-            stacking: false,        // Permitir empilhar cartas +2 e +4
-            jumpIn: false,          // Permitir jogar cartas idênticas fora do turno
-            forcePlay: false,       // Forçar a jogar a carta comprada se possível
-            sevenTrade: false,      // Trocar mãos ao jogar um 7
-            zeroRotate: false,      // Rotacionar mãos ao jogar um 0
-            drawToMatch: true,      // Comprar até encontrar uma carta jogável
-            challengePlus4: true,   // Permitir desafiar cartas +4
-            timeLimit: 30,          // Tempo limite para jogar (em segundos)
-            maxDrawCount: 1         // Número máximo de cartas que podem ser compradas por turno
-        };
-    }
-    
-    // Verificar se uma regra está ativa
-    isRuleActive(ruleName) {
-        return this.options[ruleName] === true;
-    }
-    
-    // Aplicar efeitos das cartas especiais
-    applyCardEffect(game, card, chosenColor = null) {
-        // Definir a cor para curinga
-        if (card.type === 'wild') {
-            game.currentColor = chosenColor || game.currentColor;
-        } else {
-            game.currentColor = card.color;
-        }
-        
-        // Efeitos de cartas
-        switch (card.value) {
-            case 'skip':
-                // Pular o próximo jogador
-                game.skipNextPlayer();
-                break;
-                
-            case 'reverse':
-                // Inverter a direção do jogo
-                game.reverseDirection();
-                
-                // Em jogos de 2 jogadores, funciona como Skip
-                if (game.players.length === 2) {
-                    game.skipNextPlayer();
-                }
-                break;
-                
-            case 'draw2':
-                // Próximo jogador compra 2 cartas e perde a vez
-                if (this.options.stacking && game.checkNextPlayerHasDraw2()) {
-                    // Em modo de empilhamento, permite que o próximo jogador responda com outra carta +2
-                    game.drawStack += 2;
-                } else {
-                    // Próximo jogador compra 2 cartas
-                    game.nextPlayerDrawCards(2);
-                    game.skipNextPlayer();
-                }
-                break;
-                
-            case 'wild-draw-four':
-                // Próximo jogador compra 4 cartas e perde a vez
-                if (this.options.stacking && game.checkNextPlayerHasDraw4()) {
-                    // Em modo de empilhamento, permite que o próximo jogador responda com outra carta +4
-                    game.drawStack += 4;
-                } else {
-                    // Próximo jogador compra 4 cartas
-                    game.nextPlayerDrawCards(4);
-                    game.skipNextPlayer();
-                }
-                break;
-                
-            case '7':
-                // Regra do Seven: Trocar mãos com outro jogador
-                if (this.options.sevenTrade) {
-                    // Implementação da troca de mãos fica no jogo
-                    game.handleSevenTrade();
-                }
-                break;
-                
-            case '0':
-                // Regra do Zero: Rotacionar todas as mãos
-                if (this.options.zeroRotate) {
-                    // Implementação da rotação de mãos fica no jogo
-                    game.handleZeroRotate();
-                }
-                break;
-        }
-    }
-    
-    // Serializar para armazenamento/transferência
-    toJSON() {
-        return {
-            name: this.name,
-            options: { ...this.options }
-        };
-    }
-    
-    // Criar modo de jogo a partir de objeto serializado
-    static fromJSON(data) {
-        return new GameMode(data.name, data.options);
-    }
-}
 
-// Modos de jogo pré-definidos
-class GameModes {
-    static getNormalMode() {
-        return new GameMode('normal', {
-            stacking: false,
-            jumpIn: false,
-            forcePlay: false,
-            sevenTrade: false,
-            zeroRotate: false
-        });
-    }
+const GameModes = {
+    // Definições dos modos de jogo
+    modes: {
+      normal: {
+        name: "Normal",
+        description: "Modo clássico com regras originais do UNO.",
+        rules: {
+          stacking: false,
+          jumpIn: false,
+          forcePlay: false,
+          sevenTrade: false,
+          zeroRotate: false
+        },
+        deckMultiplier: 1,
+        specialCards: {
+          skip: 2,
+          reverse: 2,
+          draw2: 2,
+          wild: 4,
+          wildDraw4: 4
+        },
+        turnTime: 30
+      },
+      
+      wild: {
+        name: "Wild",
+        description: "Mais cartas especiais no baralho para partidas mais dinâmicas.",
+        rules: {
+          stacking: false,
+          jumpIn: false,
+          forcePlay: true,
+          sevenTrade: false,
+          zeroRotate: false
+        },
+        deckMultiplier: 1,
+        specialCards: {
+          skip: 4,
+          reverse: 4,
+          draw2: 4,
+          wild: 6,
+          wildDraw4: 6
+        },
+        turnTime: 30
+      },
+      
+      noMercy: {
+        name: "No Mercy",
+        description: "Empilhe cartas +2 e +4 sem limites para combos devastadores.",
+        rules: {
+          stacking: true,
+          jumpIn: false,
+          forcePlay: true,
+          sevenTrade: false,
+          zeroRotate: false
+        },
+        deckMultiplier: 1,
+        specialCards: {
+          skip: 2,
+          reverse: 2,
+          draw2: 4,
+          wild: 4,
+          wildDraw4: 4
+        },
+        turnTime: 30
+      },
+      
+      sevenZero: {
+        name: "Seven-Zero",
+        description: "Carta 7 = trocar mãos com outro jogador, Carta 0 = rotacionar mãos entre todos.",
+        rules: {
+          stacking: false,
+          jumpIn: false,
+          forcePlay: false,
+          sevenTrade: true,
+          zeroRotate: true
+        },
+        deckMultiplier: 1,
+        specialCards: {
+          skip: 2,
+          reverse: 2,
+          draw2: 2,
+          wild: 4,
+          wildDraw4: 4
+        },
+        turnTime: 30
+      },
+      
+      extreme: {
+        name: "Extreme",
+        description: "Todas as regras especiais ativadas e mais cartas de ação. Caos total!",
+        rules: {
+          stacking: true,
+          jumpIn: true,
+          forcePlay: true,
+          sevenTrade: true,
+          zeroRotate: true
+        },
+        deckMultiplier: 1.5,
+        specialCards: {
+          skip: 4,
+          reverse: 4,
+          draw2: 4,
+          wild: 6,
+          wildDraw4: 6
+        },
+        turnTime: 30
+      },
+      
+      speed: {
+        name: "Speed",
+        description: "Jogo rápido com turnos de apenas 15 segundos. Pense rápido!",
+        rules: {
+          stacking: false,
+          jumpIn: true,
+          forcePlay: true,
+          sevenTrade: false,
+          zeroRotate: false
+        },
+        deckMultiplier: 1,
+        specialCards: {
+          skip: 2,
+          reverse: 2,
+          draw2: 2,
+          wild: 4,
+          wildDraw4: 4
+        },
+        turnTime: 15
+      },
+      
+      chaos: {
+        name: "Chaos",
+        description: "Regras aleatórias mudam a cada rodada. Imprevisível e divertido!",
+        rules: {
+          stacking: false,
+          jumpIn: false,
+          forcePlay: false,
+          sevenTrade: false,
+          zeroRotate: false,
+          chaosMode: true
+        },
+        deckMultiplier: 1.2,
+        specialCards: {
+          skip: 3,
+          reverse: 3,
+          draw2: 3,
+          wild: 5,
+          wildDraw4: 5
+        },
+        turnTime: 30
+      },
+      
+      actionOnly: {
+        name: "Action Only",
+        description: "Apenas cartas de ação, sem cartas numéricas. Pura estratégia!",
+        rules: {
+          stacking: true,
+          jumpIn: false,
+          forcePlay: true,
+          sevenTrade: false,
+          zeroRotate: false,
+          noNumberCards: true
+        },
+        deckMultiplier: 1,
+        specialCards: {
+          skip: 8,
+          reverse: 8,
+          draw2: 8,
+          wild: 8,
+          wildDraw4: 8
+        },
+        turnTime: 30
+      }
+    },
     
-    static getWildMode() {
-        return new GameMode('wild', {
-            stacking: true,
-            jumpIn: true,
-            forcePlay: true,
-            sevenTrade: false,
-            zeroRotate: false
-        });
-    }
+    // Obter um modo pelo nome
+    getMode: function(modeName) {
+      return this.modes[modeName] || this.modes.normal;
+    },
     
-    static getNoMercyMode() {
-        return new GameMode('no-mercy', {
-            stacking: true,
-            jumpIn: false,
-            forcePlay: true,
-            sevenTrade: false,
-            zeroRotate: false,
-            challengePlus4: false
-        });
-    }
+    // Obter uma lista de todos os modos disponíveis
+    getAvailableModes: function() {
+      return Object.keys(this.modes).map(key => ({
+        id: key,
+        name: this.modes[key].name,
+        description: this.modes[key].description
+      }));
+    },
     
-    static getSevenZeroMode() {
-        return new GameMode('seven-zero', {
-            stacking: false,
-            jumpIn: false,
-            forcePlay: false,
-            sevenTrade: true,
-            zeroRotate: true
-        });
-    }
+    // Obter a descrição de um modo
+    getModeDescription: function(modeName) {
+      const mode = this.getMode(modeName);
+      return mode.description;
+    },
     
-    static getCustomMode(options) {
-        return new GameMode('custom', options);
-    }
+    // Criar configuração para um modo específico
+    createModeConfig: function(modeName, customRules = {}) {
+      const baseMode = this.getMode(modeName);
+      
+      // Mesclar regras base com regras personalizadas
+      const rules = { ...baseMode.rules, ...customRules };
+      
+      return {
+        mode: modeName,
+        name: baseMode.name,
+        rules: rules,
+        specialCards: baseMode.specialCards,
+        turnTime: baseMode.turnTime,
+        deckMultiplier: baseMode.deckMultiplier
+      };
+    },
     
-    static getModeByName(name, customOptions = {}) {
-        switch (name) {
-            case 'normal':
-                return this.getNormalMode();
-            case 'wild':
-                return this.getWildMode();
-            case 'no-mercy':
-                return this.getNoMercyMode();
-            case 'seven-zero':
-                return this.getSevenZeroMode();
-            case 'custom':
-                return this.getCustomMode(customOptions);
-            default:
-                return this.getNormalMode();
-        }
+    // Atualizar regras para o modo caos (aleatórias a cada rodada)
+    updateChaosRules: function() {
+      const chaosRules = {};
+      
+      // Definir regras aleatórias
+      chaosRules.stacking = Math.random() < 0.5;
+      chaosRules.jumpIn = Math.random() < 0.5;
+      chaosRules.forcePlay = Math.random() < 0.5;
+      chaosRules.sevenTrade = Math.random() < 0.5;
+      chaosRules.zeroRotate = Math.random() < 0.5;
+      
+      return chaosRules;
     }
-}
+  };
+  
+  console.log("✅ Modos de jogo inicializados!");

@@ -1,8 +1,9 @@
 /**
  * UNO Master Fix - Correção consolidada de todos os problemas
- * Data: 2025-04-11 20:55:38
+ * Data: 2025-04-11 21:16:07
  * Desenvolvido por: Duduxindev
  */
+
 (function() {
     console.log("🎮 UNO Master Fix v1.0: Inicializando...");
     
@@ -45,29 +46,25 @@
         console.log("👁️ Configurando observador de telas...");
         
         // Substituir a função global de navegação entre telas
+        window.originalShowScreen = window.showScreen;
+        
         window.showScreen = function(screenId) {
-            // Esconder todas as telas
-            document.querySelectorAll('.screen').forEach(screen => {
-                screen.classList.remove('active');
-            });
-            
-            // Mostrar a tela solicitada
-            const targetScreen = document.getElementById(screenId);
-            if (targetScreen) {
-                targetScreen.classList.add('active');
-                console.log(`📱 Navegando para tela: ${screenId}`);
-                
-                // Aplicar correções específicas para a tela
-                applyScreenSpecificFixes(screenId);
-                
-                // Disparar evento customizado para outros scripts
-                const event = new CustomEvent('screenChange', {
-                    detail: { screen: screenId }
-                });
-                document.dispatchEvent(event);
+            // Usar a implementação original
+            if (window.originalShowScreen) {
+                window.originalShowScreen(screenId);
             } else {
-                console.error(`❌ Tela não encontrada: ${screenId}`);
+                // Implementação de fallback
+                const screens = document.querySelectorAll('.screen');
+                screens.forEach(screen => screen.classList.remove('active'));
+                
+                const targetScreen = document.getElementById(screenId);
+                if (targetScreen) {
+                    targetScreen.classList.add('active');
+                }
             }
+            
+            // Aplicar correções específicas para a tela
+            applyScreenSpecificFixes(screenId);
         };
     }
     
@@ -1476,4 +1473,6 @@
         forceHostButton
     };
 
+    // Registrar data e hora da execução
+    console.log("✅ UNO Master Fix aplicado em: 2025-04-11 21:19:53 por Duduxindev");
 })();
