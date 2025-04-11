@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UNO Online</title>
+    <title>UNO Online - Duduxindev</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/cards.css">
     <link rel="stylesheet" href="css/menu.css">
@@ -11,73 +11,177 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-database-compat.js"></script>
 </head>
 <body>
     <!-- Tela de Início -->
     <div id="start-screen" class="screen active">
         <div class="logo-container">
             <h1 class="game-logo">UNO</h1>
+            <p class="game-subtitle">Jogue com seus amigos em qualquer lugar!</p>
         </div>
         <div class="menu-container">
-            <button id="create-game-btn" class="menu-btn">Criar Jogo</button>
-            <button id="join-game-btn" class="menu-btn">Entrar em Jogo</button>
-            <button id="options-btn" class="menu-btn">Opções</button>
-            <button id="rules-btn" class="menu-btn">Regras</button>
+            <button id="play-local-btn" class="menu-btn">
+                <span class="icon">🎮</span> Jogar no Dispositivo
+            </button>
+            <button id="play-online-btn" class="menu-btn">
+                <span class="icon">🌐</span> Jogar Online
+            </button>
+            <button id="options-btn" class="menu-btn">
+                <span class="icon">⚙️</span> Opções
+            </button>
+            <button id="rules-btn" class="menu-btn">
+                <span class="icon">📋</span> Regras
+            </button>
+        </div>
+        <div class="version-info">
+            v1.0.0 - Atualizado em 11/04/2025 16:05:43<br>
+            Desenvolvido por Duduxindev
         </div>
     </div>
 
-    <!-- Tela de Criação de Jogo -->
-    <div id="create-game-screen" class="screen">
-        <h2>Criar Novo Jogo</h2>
+    <!-- Tela de Configuração de Jogo Local -->
+    <div id="local-game-screen" class="screen">
+        <h2>Jogar no Dispositivo</h2>
+        <div class="form-container">
+            <div class="mode-selection-container">
+                <button class="mode-card selected" data-mode="normal">
+                    <div class="mode-icon">🎮</div>
+                    <h3>Modo Normal</h3>
+                    <p>Regras clássicas do UNO</p>
+                </button>
+                <button class="mode-card" data-mode="wild">
+                    <div class="mode-icon">🃏</div>
+                    <h3>Modo Wild</h3>
+                    <p>Mais cartas especiais</p>
+                </button>
+                <button class="mode-card" data-mode="no-mercy">
+                    <div class="mode-icon">😈</div>
+                    <h3>No Mercy</h3>
+                    <p>Empilhe +2/+4 sem limites</p>
+                </button>
+                <button class="mode-card" data-mode="seven-zero">
+                    <div class="mode-icon">7️⃣</div>
+                    <h3>Seven-Zero</h3>
+                    <p>Regras especiais para 7 e 0</p>
+                </button>
+            </div>
+            
+            <div class="config-section">
+                <h3>Personalização (para qualquer modo)</h3>
+                <div class="custom-rules-container">
+                    <div class="custom-rule">
+                        <input type="checkbox" id="stacking" class="rule-checkbox">
+                        <label for="stacking">Empilhamento de +2/+4</label>
+                    </div>
+                    <div class="custom-rule">
+                        <input type="checkbox" id="jump-in" class="rule-checkbox">
+                        <label for="jump-in">Jump-In (Carta idêntica interrompe turno)</label>
+                    </div>
+                    <div class="custom-rule">
+                        <input type="checkbox" id="force-play" class="rule-checkbox">
+                        <label for="force-play">Jogar carta comprada quando possível</label>
+                    </div>
+                    <div class="custom-rule">
+                        <input type="checkbox" id="seven-trade" class="rule-checkbox">
+                        <label for="seven-trade">Sete = Trocar mãos</label>
+                    </div>
+                    <div class="custom-rule">
+                        <input type="checkbox" id="zero-rotate" class="rule-checkbox">
+                        <label for="zero-rotate">Zero = Rotacionar mãos</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="config-section">
+                <h3>Número de Jogadores</h3>
+                <div class="player-count-slider">
+                    <input type="range" id="player-count" min="2" max="8" value="4" class="slider">
+                    <span id="player-count-value">4 Jogadores</span>
+                </div>
+            </div>
+            
+            <div class="buttons-row">
+                <button id="start-local-game-btn" class="primary-btn">Iniciar Jogo</button>
+                <button id="back-from-local" class="secondary-btn">Voltar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Opções Online -->
+    <div id="online-options-screen" class="screen">
+        <h2>Jogar Online</h2>
+        <div class="online-options">
+            <button id="create-room-option" class="online-option">
+                <div class="option-icon">🏠</div>
+                <h3>Criar Sala</h3>
+                <p>Crie uma nova sala e convide seus amigos</p>
+            </button>
+            <button id="join-room-option" class="online-option">
+                <div class="option-icon">🚪</div>
+                <h3>Entrar em Sala</h3>
+                <p>Entre em uma sala existente com o código</p>
+            </button>
+        </div>
+        <div class="info-box">
+            <p><strong>Como funciona:</strong> Esta versão permite jogar entre dispositivos diferentes! O anfitrião cria a sala e compartilha o código com os amigos. Todos podem jogar de seus próprios dispositivos.</p>
+        </div>
+        <button id="back-from-online-options" class="secondary-btn">Voltar</button>
+    </div>
+
+    <!-- Tela de Criar Sala -->
+    <div id="create-room-screen" class="screen">
+        <h2>Criar Nova Sala</h2>
         <div class="form-container">
             <div class="form-group">
-                <label for="player-name">Seu Nome:</label>
-                <input type="text" id="player-name" class="form-input" placeholder="Insira seu nome">
+                <label for="host-name">Seu Nome:</label>
+                <input type="text" id="host-name" class="form-input" placeholder="Digite seu nome">
             </div>
             <div class="form-group">
-                <label for="game-mode">Modo de Jogo:</label>
-                <select id="game-mode" class="form-select">
+                <label for="room-mode">Modo de Jogo:</label>
+                <select id="room-mode" class="form-select">
                     <option value="normal">Normal</option>
                     <option value="wild">Wild</option>
                     <option value="no-mercy">No Mercy</option>
-                    <option value="progressive">Progressive</option>
                     <option value="seven-zero">Seven-Zero</option>
-                    <option value="custom">Personalizado</option>
                 </select>
             </div>
             <div class="form-group">
-                <label for="player-count">Número de Jogadores:</label>
-                <select id="player-count" class="form-select">
+                <label for="max-players">Número de Jogadores:</label>
+                <select id="max-players" class="form-select">
                     <option value="2">2 Jogadores</option>
                     <option value="3">3 Jogadores</option>
                     <option value="4" selected>4 Jogadores</option>
-                    <option value="5">5 Jogadores</option>
                     <option value="6">6 Jogadores</option>
-                    <option value="7">7 Jogadores</option>
                     <option value="8">8 Jogadores</option>
                 </select>
             </div>
-            <div id="custom-rules" class="form-group hidden">
-                <h3>Regras Personalizadas</h3>
-                <div class="custom-rule">
-                    <input type="checkbox" id="stacking" class="rule-checkbox">
-                    <label for="stacking">Empilhamento de +2/+4</label>
-                </div>
-                <div class="custom-rule">
-                    <input type="checkbox" id="jump-in" class="rule-checkbox">
-                    <label for="jump-in">Jump-In (Carta idêntica interrompe turno)</label>
-                </div>
-                <div class="custom-rule">
-                    <input type="checkbox" id="force-play" class="rule-checkbox">
-                    <label for="force-play">Jogar carta comprada quando possível</label>
-                </div>
-                <div class="custom-rule">
-                    <input type="checkbox" id="seven-trade" class="rule-checkbox">
-                    <label for="seven-trade">Sete = Trocar mãos</label>
-                </div>
-                <div class="custom-rule">
-                    <input type="checkbox" id="zero-rotate" class="rule-checkbox">
-                    <label for="zero-rotate">Zero = Rotacionar mãos</label>
+            <div class="form-group">
+                <h3>Personalização</h3>
+                <div class="custom-rules-container">
+                    <div class="custom-rule">
+                        <input type="checkbox" id="room-stacking" class="rule-checkbox">
+                        <label for="room-stacking">Empilhamento de +2/+4</label>
+                    </div>
+                    <div class="custom-rule">
+                        <input type="checkbox" id="room-jump-in" class="rule-checkbox">
+                        <label for="room-jump-in">Jump-In (Carta idêntica interrompe turno)</label>
+                    </div>
+                    <div class="custom-rule">
+                        <input type="checkbox" id="room-force-play" class="rule-checkbox">
+                        <label for="room-force-play">Jogar carta comprada quando possível</label>
+                    </div>
+                    <div class="custom-rule">
+                        <input type="checkbox" id="room-seven-trade" class="rule-checkbox">
+                        <label for="room-seven-trade">Sete = Trocar mãos</label>
+                    </div>
+                    <div class="custom-rule">
+                        <input type="checkbox" id="room-zero-rotate" class="rule-checkbox">
+                        <label for="room-zero-rotate">Zero = Rotacionar mãos</label>
+                    </div>
                 </div>
             </div>
             <div class="buttons-row">
@@ -87,17 +191,18 @@
         </div>
     </div>
 
-    <!-- Tela de Entrada em Jogo -->
-    <div id="join-game-screen" class="screen">
-        <h2>Entrar em um Jogo</h2>
+    <!-- Tela de Entrar em Sala -->
+    <div id="join-room-screen" class="screen">
+        <h2>Entrar em Sala</h2>
         <div class="form-container">
             <div class="form-group">
-                <label for="room-code">Código da Sala:</label>
-                <input type="text" id="room-code" class="form-input" placeholder="Insira o código">
+                <label for="player-name">Seu Nome:</label>
+                <input type="text" id="player-name" class="form-input" placeholder="Digite seu nome">
             </div>
             <div class="form-group">
-                <label for="join-player-name">Seu Nome:</label>
-                <input type="text" id="join-player-name" class="form-input" placeholder="Insira seu nome">
+                <label for="room-code">Código da Sala:</label>
+                <input type="text" id="room-code" class="form-input" placeholder="Digite o código de 4 letras">
+                <p class="form-hint">Peça ao anfitrião o código da sala.</p>
             </div>
             <div class="buttons-row">
                 <button id="join-room-btn" class="primary-btn">Entrar na Sala</button>
@@ -110,14 +215,33 @@
     <div id="waiting-room-screen" class="screen">
         <h2>Sala de Espera</h2>
         <div class="room-info">
-            <p>Código da Sala: <span id="room-code-display" class="room-code">XXXX</span></p>
-            <p>Modo: <span id="room-mode-display">Normal</span></p>
+            <div class="room-code-box">
+                <h3>Código da Sala:</h3>
+                <div class="code-display">
+                    <span id="room-code-display">XXXX</span>
+                    <button id="copy-code-btn" class="icon-btn" title="Copiar código">📋</button>
+                </div>
+                <p class="share-text">Compartilhe este código com seus amigos para que eles possam entrar na sala em seus dispositivos.</p>
+            </div>
+            <div class="room-details">
+                <div class="detail-item">
+                    <span class="detail-label">Modo:</span>
+                    <span id="room-mode-display" class="detail-value">Normal</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Jogadores:</span>
+                    <span id="room-players-count" class="detail-value">1/4</span>
+                </div>
+            </div>
         </div>
         <div class="players-container">
             <h3>Jogadores</h3>
             <ul id="players-list" class="players-list">
                 <!-- Jogadores serão adicionados dinamicamente -->
             </ul>
+        </div>
+        <div class="waiting-message" id="waiting-message">
+            <p>Aguardando jogadores entrarem na sala...</p>
         </div>
         <div class="buttons-row">
             <button id="start-game-btn" class="primary-btn">Iniciar Jogo</button>
@@ -205,8 +329,14 @@
                 <li><strong>Normal:</strong> Regras padrão do UNO.</li>
                 <li><strong>Wild:</strong> Mais cartas especiais no baralho.</li>
                 <li><strong>No Mercy:</strong> Sem limitações para cartas +2 e +4, possibilitando grandes sequências.</li>
-                <li><strong>Progressive:</strong> Cartas +2 e +4 podem ser empilhadas, acumulando o efeito.</li>
                 <li><strong>Seven-Zero:</strong> A carta 7 faz trocar mãos com outro jogador e a carta 0 faz todos os jogadores passarem suas mãos.</li>
+            </ul>
+            
+            <h3>Regras Personalizáveis</h3>
+            <ul>
+                <li><strong>Empilhamento:</strong> Cartas +2 e +4 podem ser empilhadas, acumulando o efeito.</li>
+                <li><strong>Jump-In:</strong> Se você tem uma carta idêntica à do topo da pilha de descarte, pode jogá-la a qualquer momento.</li>
+                <li><strong>Força de Jogo:</strong> Se comprar uma carta jogável, deve jogá-la imediatamente.</li>
             </ul>
         </div>
         <button id="back-from-rules" class="secondary-btn">Voltar</button>
@@ -271,28 +401,11 @@
         <button id="back-from-options" class="secondary-btn">Voltar</button>
     </div>
 
-    <!-- Tela de Fim de Jogo -->
-    <div id="game-over-screen" class="screen">
-        <h2>Fim de Jogo!</h2>
-        <div class="winner-info">
-            <h3>Vencedor:</h3>
-            <div id="winner-display" class="winner-display">
-                <span id="winner-name">Jogador 1</span>
-            </div>
-        </div>
-        <div class="game-stats">
-            <h3>Estatísticas</h3>
-            <div id="game-stats-container" class="stats-container">
-                <!-- Estatísticas do jogo serão adicionadas aqui -->
-            </div>
-        </div>
-        <div class="buttons-row">
-            <button id="play-again-btn" class="primary-btn">Jogar Novamente</button>
-            <button id="return-main-btn" class="secondary-btn">Menu Principal</button>
-        </div>
-    </div>
+    <!-- Notificação Toast -->
+    <div id="toast" class="toast"></div>
 
-    <!-- Scripts -->
+    <!-- Firebase Configuration and App Scripts -->
+    <script src="js/firebase-config.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/cards.js"></script>
     <script src="js/player.js"></script>
