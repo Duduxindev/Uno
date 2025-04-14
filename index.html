@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UNO Online - Duduxindev</title>
     
-    <!-- Loading styles -->
+    <!-- Estilos principais -->
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/cards-fixed.css">
     <link rel="stylesheet" href="css/game.css">
@@ -20,15 +20,18 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Firebase SDK -->
+    <!-- Scripts de detecção e correção de erros de banco de dados -->
+    <script src="js/database-error-fix.js"></script>
+    
+    <!-- Firebase SDK Modular (versão 9) -->
     <script type="module">
-        // Import Firebase
+        // Import do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-app.js";
         import { getDatabase, ref, set, onValue, push, remove, update, get } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-database.js";
         import { getAuth } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-analytics.js";
         
-        // Updated configuration
+        // Configuração atualizada
         const firebaseConfig = {
             apiKey: "AIzaSyBlYzl1Kzd5pY0gZYRghsrGkbCfLm6iTqk",
             authDomain: "uno-game-duduxindev.firebaseapp.com",
@@ -40,22 +43,27 @@
             measurementId: "G-HYKE1R16G5"
         };
         
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const auth = getAuth(app);
-        const analytics = getAnalytics(app);
-        
-        // Expose for non-modular scripts
-        window.firebaseApp = app;
-        window.firebaseDb = db;
-        window.firebaseAuth = auth;
-        window.firebaseAnalytics = analytics;
-        
-        console.log("✅ Firebase Modular initialized successfully!");
+        try {
+            // Inicializar Firebase
+            const app = initializeApp(firebaseConfig);
+            const db = getDatabase(app);
+            const auth = getAuth(app);
+            const analytics = getAnalytics(app);
+            
+            // Expor para scripts não modulares
+            window.firebaseApp = app;
+            window.firebaseDb = db;
+            window.firebaseAuth = auth;
+            window.firebaseAnalytics = analytics;
+            
+            console.log("✅ Firebase Modular inicializado com sucesso!");
+        } catch (error) {
+            console.error("❌ Erro ao inicializar Firebase Modular:", error);
+            document.dispatchEvent(new CustomEvent('firebase-init-failed'));
+        }
     </script>
     
-    <!-- Firebase compat for compatibility with existing code -->
+    <!-- Firebase compat para compatibilidade com código existente -->
     <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-auth-compat.js"></script>
@@ -63,44 +71,584 @@
     <script src="https://www.gstatic.com/firebasejs/9.19.1/firebase-analytics-compat.js"></script>
     
     <script>
-        // Initialize compatibility API
-        firebase.initializeApp({
-            apiKey: "AIzaSyBlYzl1Kzd5pY0gZYRghsrGkbCfLm6iTqk",
-            authDomain: "uno-game-duduxindev.firebaseapp.com",
-            databaseURL: "https://uno-game-duduxindev-default-rtdb.firebaseio.com",
-            projectId: "uno-game-duduxindev",
-            storageBucket: "uno-game-duduxindev.firebasestorage.app",
-            messagingSenderId: "1020680045987",
-            appId: "1:1020680045987:web:f8e762882f180fd6b9c616",
-            measurementId: "G-HYKE1R16G5"
-        });
-        
-        console.log("✅ Firebase Compat initialized successfully!");
+        try {
+            // Inicializar API de compatibilidade
+            firebase.initializeApp({
+                apiKey: "AIzaSyBlYzl1Kzd5pY0gZYRghsrGkbCfLm6iTqk",
+                authDomain: "uno-game-duduxindev.firebaseapp.com",
+                databaseURL: "https://uno-game-duduxindev-default-rtdb.firebaseio.com",
+                projectId: "uno-game-duduxindev",
+                storageBucket: "uno-game-duduxindev.firebasestorage.app",
+                messagingSenderId: "1020680045987",
+                appId: "1:1020680045987:web:f8e762882f180fd6b9c616",
+                measurementId: "G-HYKE1R16G5"
+            });
+            
+            console.log("✅ Firebase Compat inicializado com sucesso!");
+        } catch (error) {
+            console.error("❌ Erro ao inicializar Firebase Compat:", error);
+            document.dispatchEvent(new CustomEvent('firebase-compat-init-failed'));
+        }
     </script>
 </head>
 <body>
     <script>
-    console.log("🚨 Applying emergency fix: 2025-04-14 14:34:10");
+    console.log("🚨 Aplicando correção emergencial: 2025-04-14 14:48:21");
+    console.log("🔄 Versão do sistema: 2.1.0");
+    console.log("👤 Usuário atual: Duduxindev");
     </script>
     
-    <!-- Content of the page remains the same, only updating versions and loading new scripts -->
-    
-    <!-- Firebase Scripts - Same as before -->
+    <!-- Tela de Início -->
+    <div id="start-screen" class="screen active">
+        <div class="logo-container">
+            <h1 class="game-logo">UNO</h1>
+            <p class="game-subtitle">Jogue com seus amigos em qualquer lugar!</p>
+        </div>
+        <div class="menu-container">
+            <button id="play-local-btn" class="menu-btn">
+                <span class="icon">Jogar no Dispositivo</span>
+            </button>
+            <button id="play-online-btn" class="menu-btn">
+                <span class="icon">Jogar Online</span>
+            </button>
+            <button id="options-btn" class="menu-btn">
+                <span class="icon">Opções</span>
+            </button>
+            <button id="rules-btn" class="menu-btn">
+                <span class="icon">Regras</span>
+            </button>
+        </div>
+        <div class="version-info">
+            v2.1.0 - Atualizado em 2025-04-14 14:48:21<br>
+            Desenvolvido por Duduxindev
+        </div>
+    </div>
+
+    <!-- Tela de Configuração de Jogo Local -->
+    <div id="local-game-screen" class="screen">
+        <h2>Jogar no Dispositivo</h2>
+        <div class="form-container">
+            <div class="mode-selection">
+                <h3>Selecione o Modo de Jogo</h3>
+                <div class="modes-container">
+                    <div class="mode-card selected" data-mode="normal">
+                        <div class="mode-icon">N</div>
+                        <h4>Normal</h4>
+                        <p>Regras clássicas do UNO</p>
+                    </div>
+                    
+                    <div class="mode-card" data-mode="wild">
+                        <div class="mode-icon">W</div>
+                        <h4>Wild</h4>
+                        <p>Mais cartas especiais</p>
+                    </div>
+                    
+                    <div class="mode-card" data-mode="no-mercy">
+                        <div class="mode-icon">NM</div>
+                        <h4>No Mercy</h4>
+                        <p>Empilhe +2/+4 sem limites</p>
+                    </div>
+                    
+                    <div class="mode-card" data-mode="seven-zero">
+                        <div class="mode-icon">7-0</div>
+                        <h4>Seven-Zero</h4>
+                        <p>Regras para 7 e 0</p>
+                    </div>
+                    
+                    <div class="mode-card" data-mode="extreme">
+                        <div class="mode-icon">EX</div>
+                        <h4>Extreme</h4>
+                        <p>Todas as regras especiais</p>
+                    </div>
+                    
+                    <div class="mode-card" data-mode="speed">
+                        <div class="mode-icon">SP</div>
+                        <h4>Speed</h4>
+                        <p>Turnos de 15 segundos</p>
+                    </div>
+                    
+                    <div class="mode-card" data-mode="chaos">
+                        <div class="mode-icon">CH</div>
+                        <h4>Chaos</h4>
+                        <p>Regras imprevisíveis</p>
+                    </div>
+                    
+                    <div class="mode-card" data-mode="action-only">
+                        <div class="mode-icon">AO</div>
+                        <h4>Action Only</h4>
+                        <p>Sem cartas numéricas</p>
+                    </div>
+
+                    <!-- Novos modos de jogo serão adicionados por JavaScript -->
+                </div>
+                <div class="mode-description" id="mode-description">
+                    Modo clássico com regras originais do UNO.
+                </div>
+            </div>
+            
+            <div class="config-section">
+                <h3>Personalização (para qualquer modo)</h3>
+                <div class="custom-rules-container">
+                    <div class="custom-rule">
+                        <input type="checkbox" id="stacking" class="rule-checkbox">
+                        <label for="stacking">Empilhamento de +2/+4</label>
+                    </div>
+                    <div class="custom-rule">
+                        <input type="checkbox" id="jump-in" class="rule-checkbox">
+                        <label for="jump-in">Jump-In (Carta idêntica interrompe turno)</label>
+                    </div>
+                    <div class="custom-rule">
+                        <input type="checkbox" id="force-play" class="rule-checkbox">
+                        <label for="force-play">Jogar carta comprada quando possível</label>
+                    </div>
+                    <div class="custom-rule">
+                        <input type="checkbox" id="seven-trade" class="rule-checkbox">
+                        <label for="seven-trade">Sete = Trocar mãos</label>
+                    </div>
+                    <div class="custom-rule">
+                        <input type="checkbox" id="zero-rotate" class="rule-checkbox">
+                        <label for="zero-rotate">Zero = Rotacionar mãos</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="config-section">
+                <h3>Número de Jogadores</h3>
+                <div class="player-count-slider">
+                    <input type="range" id="player-count" min="2" max="8" value="4" class="slider">
+                    <span id="player-count-value">4 Jogadores</span>
+                </div>
+            </div>
+            
+            <div class="buttons-row">
+                <button id="start-local-game-btn" class="primary-btn">Iniciar Jogo</button>
+                <button id="back-from-local" class="secondary-btn">Voltar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Opções Online -->
+    <div id="online-options-screen" class="screen">
+        <h2>Jogar Online</h2>
+        <div class="online-options">
+            <button id="create-room-option" class="online-option">
+                <div class="option-icon">CR</div>
+                <h3>Criar Sala</h3>
+                <p>Crie uma nova sala e convide seus amigos</p>
+            </button>
+            <button id="join-room-option" class="online-option">
+                <div class="option-icon">ES</div>
+                <h3>Entrar em Sala</h3>
+                <p>Entre em uma sala existente com o código</p>
+            </button>
+        </div>
+        <div class="info-box">
+            <p><strong>Como funciona:</strong> Esta versão permite jogar entre dispositivos diferentes! O anfitrião cria a sala e compartilha o código com os amigos. Todos podem jogar de seus dispositivos em tempo real.</p>
+            <p><strong>Novidade:</strong> Chance de obter a carta lendária "99" com vitória instantânea!</p>
+        </div>
+        <button id="back-from-online-options" class="secondary-btn">Voltar</button>
+    </div>
+
+    <!-- Tela de Criar Sala -->
+    <div id="create-room-screen" class="screen">
+        <h2>Criar Nova Sala</h2>
+        <div class="form-container">
+            <div class="form-group">
+                <label for="host-name">Seu Nome:</label>
+                <input type="text" id="host-name" class="form-input" placeholder="Digite seu nome">
+            </div>
+            <div class="form-group">
+                <label for="room-mode">Modo de Jogo:</label>
+                <select id="room-mode" class="form-select">
+                    <option value="normal">Normal - Regras clássicas</option>
+                    <option value="wild">Wild - Mais cartas especiais</option>
+                    <option value="no-mercy">No Mercy - Empilhamento sem limites</option>
+                    <option value="seven-zero">Seven-Zero - Troca de mãos</option>
+                    <option value="extreme">Extreme - Cartas especiais e regras caóticas</option>
+                    <option value="speed">Speed - Jogo rápido, turnos de 15s</option>
+                    <option value="chaos">Chaos - Regras imprevisíveis</option>
+                    <option value="action-only">Action Only - Sem cartas numéricas</option>
+                    <!-- Novos modos de jogo serão adicionados por JavaScript -->
+                </select>
+                <div class="mode-description" id="room-mode-description">
+                    Modo clássico com regras originais do UNO.
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="max-players">Número de Jogadores:</label>
+                <select id="max-players" class="form-select">
+                    <option value="2">2 Jogadores</option>
+                    <option value="3">3 Jogadores</option>
+                    <option value="4" selected>4 Jogadores</option>
+                    <option value="6">6 Jogadores</option>
+                    <option value="8">8 Jogadores</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <h3>Personalização</h3>
+                <div class="custom-rules-container">
+                    <div class="custom-rule">
+                        <input type="checkbox" id="room-stacking" class="rule-checkbox">
+                        <label for="room-stacking">Empilhamento de +2/+4</label>
+                    </div>
+                    <div class="custom-rule">
+                        <input type="checkbox" id="room-jump-in" class="rule-checkbox">
+                        <label for="room-jump-in">Jump-In (Carta idêntica interrompe turno)</label>
+                    </div>
+                    <div class="custom-rule">
+                        <input type="checkbox" id="room-force-play" class="rule-checkbox">
+                        <label for="room-force-play">Jogar carta comprada quando possível</label>
+                    </div>
+                    <div class="custom-rule">
+                        <input type="checkbox" id="room-seven-trade" class="rule-checkbox">
+                        <label for="room-seven-trade">Sete = Trocar mãos</label>
+                    </div>
+                    <div class="custom-rule">
+                        <input type="checkbox" id="room-zero-rotate" class="rule-checkbox">
+                        <label for="room-zero-rotate">Zero = Rotacionar mãos</label>
+                    </div>
+                </div>
+            </div>
+            <div class="buttons-row">
+                <button id="create-room-btn" class="primary-btn">Criar Sala</button>
+                <button id="back-from-create" class="secondary-btn">Voltar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Entrar em Sala -->
+    <div id="join-room-screen" class="screen">
+        <h2>Entrar em Sala</h2>
+        <div class="form-container">
+            <div class="form-group">
+                <label for="player-name">Seu Nome:</label>
+                <input type="text" id="player-name" class="form-input" placeholder="Digite seu nome">
+            </div>
+            <div class="form-group">
+                <label for="room-code">Código da Sala:</label>
+                <input type="text" id="room-code" class="form-input" placeholder="Digite o código de 4 letras">
+                <p class="form-hint">Peça ao anfitrião o código da sala.</p>
+            </div>
+            <div class="buttons-row">
+                <button id="join-room-btn" class="primary-btn">Entrar na Sala</button>
+                <button id="back-from-join" class="secondary-btn">Voltar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Sala de Espera -->
+    <div id="waiting-room-screen" class="screen">
+        <h2>Sala de Espera</h2>
+        <div class="waiting-room-layout">
+            <div class="waiting-room-left">
+                <div class="room-info">
+                    <div class="room-code-box">
+                        <h3>Código da Sala:</h3>
+                        <div class="code-display">
+                            <span id="room-code-display">XXXX</span>
+                            <button id="copy-code-btn" class="icon-btn" title="Copiar código">Copiar</button>
+                        </div>
+                        <p class="share-text">Compartilhe este código com seus amigos para que eles possam entrar na sala em seus dispositivos.</p>
+                    </div>
+                    <div class="room-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Modo:</span>
+                            <span id="room-mode-display" class="detail-value">Normal</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Jogadores:</span>
+                            <span id="room-players-count" class="detail-value">1/4</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="players-container">
+                    <h3>Jogadores</h3>
+                    <ul id="players-list" class="players-list">
+                        <!-- Jogadores serão adicionados dinamicamente -->
+                    </ul>
+                </div>
+                <div class="waiting-message" id="waiting-message">
+                    <p>Aguardando jogadores entrarem na sala...</p>
+                </div>
+                <div class="buttons-row">
+                    <button id="start-game-btn" class="primary-btn pulse-button">Iniciar Jogo</button>
+                    <button id="leave-room-btn" class="secondary-btn">Sair da Sala</button>
+                </div>
+            </div>
+            
+            <!-- Seção de chat na sala de espera -->
+            <div class="waiting-room-right">
+                <div class="chat-container">
+                    <h3>Chat da Sala</h3>
+                    <div id="waiting-chat-messages" class="chat-messages">
+                        <!-- Mensagens serão adicionadas dinamicamente -->
+                        <div class="system-message">Bem-vindo ao chat! Converse com outros jogadores aqui.</div>
+                        <div class="system-message">Novidade: Você pode encontrar a lendária carta 99!</div>
+                    </div>
+                    <div class="chat-input-container">
+                        <input type="text" id="waiting-chat-input" class="chat-input" placeholder="Digite sua mensagem...">
+                        <button id="waiting-chat-send" class="chat-send-btn">Enviar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Jogo -->
+    <div id="game-screen" class="screen">
+        <div class="game-layout">
+            <div class="game-main">
+                <div class="game-header">
+                    <div class="game-info">
+                        <span id="current-player">Vez de: Jogador 1</span>
+                        <span id="cards-left">Cartas no monte: 87</span>
+                    </div>
+                    <div class="game-actions">
+                        <button id="uno-btn" class="action-btn uno-btn">UNO!</button>
+                        <button id="menu-btn" class="action-btn menu-btn">Menu</button>
+                    </div>
+                </div>
+                
+                <div class="game-table">
+                    <div class="opponents-container" id="opponents-container">
+                        <!-- Oponentes serão adicionados dinamicamente -->
+                    </div>
+                    
+                    <div class="center-area">
+                        <div class="game-status-indicator" id="game-status-indicator">
+                            <div class="status-text">Seu turno!</div>
+                            <div class="timer-bar"><div class="timer-progress"></div></div>
+                        </div>
+                        
+                        <div class="deck-area">
+                            <div id="draw-pile" class="card-pile draw-pile">
+                                <!-- Pilha de compra -->
+                            </div>
+                            <div id="discard-pile" class="card-pile discard-pile">
+                                <!-- Pilha de descarte -->
+                            </div>
+                        </div>
+                        <div id="game-messages" class="game-messages">
+                            <!-- Mensagens do jogo -->
+                        </div>
+                    </div>
+                    
+                    <div class="player-hand-container">
+                        <div class="player-info">
+                            <div class="player-info-left">
+                                <span id="player-name-display">Você</span>
+                                <span id="card-count">7 cartas</span>
+                            </div>
+                            <div id="cards-preview" class="cards-preview">
+                                <!-- Preview das cartas jogáveis -->
+                            </div>
+                        </div>
+                        <div id="player-hand" class="player-hand">
+                            <!-- As cartas do jogador serão adicionadas aqui -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seção de chat no jogo -->
+            <div class="game-sidebar">
+                <div class="chat-container">
+                    <h3>Chat</h3>
+                    <div id="game-chat-messages" class="chat-messages">
+                        <!-- Mensagens serão adicionadas dinamicamente -->
+                        <div class="system-message">Use "!uno" para chamar UNO pelo chat!</div>
+                        <div class="system-message">Busque a lendária carta 99 para vitória instantânea!</div>
+                    </div>
+                    <div class="chat-input-container">
+                        <input type="text" id="game-chat-input" class="chat-input" placeholder="Digite sua mensagem...">
+                        <button id="game-chat-send" class="chat-send-btn">Enviar</button>
+                    </div>
+                </div>
+                
+                <div class="game-stats">
+                    <h3>Estatísticas</h3>
+                    <div id="game-stats-content" class="game-stats-content">
+                        <!-- Estatísticas serão adicionadas dinamicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="color-selector" class="color-selector hidden">
+            <h3>Escolha uma cor:</h3>
+            <div class="color-options">
+                <button class="color-btn red" data-color="red"></button>
+                <button class="color-btn blue" data-color="blue"></button>
+                <button class="color-btn green" data-color="green"></button>
+                <button class="color-btn yellow" data-color="yellow"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Regras -->
+    <div id="rules-screen" class="screen">
+        <h2>Regras do UNO</h2>
+        <div class="rules-content">
+            <h3>Regras Básicas</h3>
+            <p>O objetivo do UNO é ser o primeiro jogador a se livrar de todas as cartas.</p>
+            <p>Cada jogador recebe 7 cartas no início. O restante forma o monte de compras.</p>
+            <p>A primeira carta do monte é virada para iniciar a pilha de descarte.</p>
+            <p>Os jogadores devem jogar uma carta que combine com a cor, número ou símbolo da carta no topo da pilha de descarte.</p>
+            <p>Se não tiver uma carta compatível, o jogador deve comprar uma carta do monte. Se a carta comprada for jogável, ela pode ser jogada imediatamente.</p>
+            <p>Quando um jogador ficar com apenas uma carta, deve dizer "UNO!". Se não disser e for pego por outro jogador, deve comprar 2 cartas.</p>
+            
+            <h3>Cartas Especiais</h3>
+            <ul>
+                <li><strong>Pular (Skip):</strong> O próximo jogador perde a vez.</li>
+                <li><strong>Inverter (Reverse):</strong> Inverte a direção do jogo.</li>
+                <li><strong>+2:</strong> O próximo jogador compra 2 cartas e perde a vez.</li>
+                <li><strong>Curinga (Wild):</strong> Permite escolher a cor que continuará o jogo.</li>
+                <li><strong>Curinga +4 (Wild Draw Four):</strong> Permite escolher a cor e o próximo jogador compra 4 cartas e perde a vez.</li>
+            </ul>
+            
+            <h3>Cartas Raras e Especiais (Novidade!)</h3>
+            <ul>
+                <li><strong>Carta 99 (Lendária):</strong> Carta ultra-rara com 0.0000001% de chance de aparecer. Garante vitória instantânea quando jogada!</li>
+                <li><strong>Comando:</strong> Força outro jogador a descartar uma carta de uma cor específica.</li>
+                <li><strong>Escudo:</strong> Bloqueia o efeito de cartas +2, +4 e +6.</li>
+                <li><strong>Troca de Mãos:</strong> Troca sua mão com a de outro jogador à sua escolha.</li>
+                <li><strong>Compre Até:</strong> O próximo jogador compra cartas até encontrar uma de cor específica.</li>
+                <li><strong>Turno Duplo:</strong> Permite jogar duas vezes seguidas.</li>
+                <li><strong>+6:</strong> O próximo jogador compra 6 cartas e perde a vez.</li>
+                <li><strong>Pular Todos:</strong> Todos os outros jogadores perdem a vez.</li>
+            </ul>
+            
+            <h3>Modos de Jogo</h3>
+            <ul>
+                <li><strong>Normal:</strong> Regras padrão do UNO.</li>
+                <li><strong>Wild:</strong> Mais cartas especiais no baralho.</li>
+                <li><strong>No Mercy:</strong> Sem limitações para cartas +2 e +4, possibilitando grandes sequências.</li>
+                <li><strong>Seven-Zero:</strong> A carta 7 faz trocar mãos com outro jogador e a carta 0 faz todos os jogadores passarem suas mãos.</li>
+                <li><strong>Extreme:</strong> Todas as regras especiais ativadas incluindo cartas exclusivas.</li>
+                <li><strong>Speed:</strong> Jogo rápido com turnos de 15 segundos.</li>
+                <li><strong>Chaos:</strong> Regras imprevisíveis que mudam a cada rodada.</li>
+                <li><strong>Action Only:</strong> Apenas cartas de ação, sem cartas numéricas.</li>
+                <li><strong>Insane:</strong> Modo insano com cartas poderosas e regras imprevisíveis.</li>
+                <li><strong>Mirror:</strong> Cada carta jogada afeta todos os jogadores da mesma forma.</li>
+                <li><strong>Quick Draw:</strong> Compre uma carta automaticamente a cada turno.</li>
+                <li><strong>Challenge:</strong> Cartas de desafio aparecem frequentemente.</li>
+            </ul>
+            
+            <h3>Regras Personalizáveis</h3>
+            <ul>
+                <li><strong>Empilhamento:</strong> Cartas +2 e +4 podem ser empilhadas, acumulando o efeito.</li>
+                <li><strong>Jump-In:</strong> Se você tem uma carta idêntica à do topo da pilha de descarte, pode jogá-la a qualquer momento.</li>
+                <li><strong>Força de Jogo:</strong> Se comprar uma carta jogável, deve jogá-la imediatamente.</li>
+                <li><strong>Troca de Sete:</strong> Ao jogar um 7, troque sua mão com outro jogador à sua escolha.</li>
+                <li><strong>Rotação de Zero:</strong> Ao jogar um 0, todos passam suas mãos na direção do jogo.</li>
+            </ul>
+        </div>
+        <button id="back-from-rules" class="secondary-btn">Voltar</button>
+    </div>
+
+    <!-- Tela de Opções -->
+    <div id="options-screen" class="screen">
+        <h2>Opções</h2>
+        <div class="options-container">
+            <div class="option-group">
+                <h3>Sons</h3>
+                <div class="option-item">
+                    <label for="sound-effects">Efeitos Sonoros</label>
+                    <label class="switch">
+                        <input type="checkbox" id="sound-effects" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="option-item">
+                    <label for="background-music">Música de Fundo</label>
+                    <label class="switch">
+                        <input type="checkbox" id="background-music" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="option-group">
+                <h3>Visual</h3>
+                <div class="option-item">
+                    <label for="card-animation">Animações de Cartas</label>
+                    <label class="switch">
+                        <input type="checkbox" id="card-animation" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="option-item">
+                    <label for="dark-mode">Modo Escuro</label>
+                    <label class="switch">
+                        <input type="checkbox" id="dark-mode">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="option-item">
+                    <label for="legendary-effects">Efeitos Especiais Cartas</label>
+                    <label class="switch">
+                        <input type="checkbox" id="legendary-effects" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="option-group">
+                <h3>Jogabilidade</h3>
+                <div class="option-item">
+                    <label for="auto-uno">UNO Automático</label>
+                    <label class="switch">
+                        <input type="checkbox" id="auto-uno">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="option-item">
+                    <label for="turn-timer">Temporizador de Turnos</label>
+                    <label class="switch">
+                        <input type="checkbox" id="turn-timer" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="option-item">
+                    <label for="show-playable">Destacar Cartas Jogáveis</label>
+                    <label class="switch">
+                        <input type="checkbox" id="show-playable" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="option-item">
+                    <label for="random-cards">Distribuição Aleatória</label>
+                    <label class="switch">
+                        <input type="checkbox" id="random-cards" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            <!-- A seção de opções de banco de dados será adicionada dinamicamente pelo database-error-fix.js -->
+        </div>
+        <button id="back-from-options" class="secondary-btn">Voltar</button>
+    </div>
+
+    <!-- Notificação Toast -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Firebase Scripts -->
     <script src="js/firebase-config.js"></script>
     <script src="js/firebase-reconnect.js"></script>
     <script src="js/firebase-auth.js"></script>
     <script src="js/firebase-database.js"></script>
     <script src="js/firebase-storage.js"></script>
     <script src="js/firebase-presence.js"></script>
-    
-    <!-- Application scripts -->
+    <script src="js/database-error-fix.js"></script>
+
+    <!-- Scripts de aplicação - Ordem importante! -->
     <script src="js/storage.js"></script>
     <script src="js/player.js"></script>
-    <script src="js/card-generator.js"></script> <!-- New script for card generation -->
-    <script src="js/enhanced-modes.js"></script> <!-- Enhanced game modes -->
-    <script src="js/enhanced-card-renderer.js"></script> <!-- Enhanced card renderer -->
+    <script src="js/card-generator.js"></script>
+    <script src="js/enhanced-modes.js"></script>
+    <script src="js/enhanced-card-renderer.js"></script>
+    <script src="js/legendary-card-handler.js"></script>
     <script src="js/room.js"></script>
     <script src="js/chat.js"></script>
+    <script src="js/card-renderer.js"></script>
     <script src="js/game-starter.js"></script>
     <script src="js/game-initializer.js"></script>
     <script src="js/ai-player.js"></script>
@@ -110,16 +658,16 @@
     <script src="js/firebase-direct-fix.js"></script>
     <script src="js/cards-direct-fix.js"></script>
     
-    <!-- Script for initialization -->
+    <!-- Script para inicialização -->
     <script>
-                console.log("Initializing UNO application on: 2025-04-14 14:41:01");
-        console.log("Developer: Duduxindev");
+        console.log("Inicializando aplicação UNO em: 2025-04-14 14:48:21");
+        console.log("Desenvolvedor: Duduxindev");
         
-        // Check if all scripts were loaded correctly
+        // Verificar se todos os scripts foram carregados corretamente
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("DOM fully loaded");
+            console.log("DOM carregado completamente");
             
-            // Add pulsation animation to the start game button
+            // Adicionar pulsação animada ao botão de iniciar jogo
             const pulseButton = document.querySelector('.pulse-button');
             if (pulseButton) {
                 setInterval(() => {
@@ -127,56 +675,70 @@
                 }, 1500);
             }
             
-            // Initialize anonymous authentication automatically
+            // Inicializar autenticação anônima automaticamente
             if (window.FirebaseAuth) {
                 FirebaseAuth.signInAnonymously()
                   .then(user => {
-                    console.log("✅ Authenticated as:", user.uid);
+                    console.log("✅ Autenticado como:", user.uid);
                     
-                    // Initialize presence system
+                    // Inicializar sistema de presença
                     if (window.FirebasePresence) {
                         FirebasePresence.init(user.uid, Storage.getSession().playerName || "Jogador");
                     }
                   })
                   .catch(error => {
-                    console.error("❌ Authentication error:", error);
+                    console.error("❌ Erro de autenticação:", error);
+                    
+                    // Usar autenticação local se o Firebase falhar
+                    if (window.firebaseFallback) {
+                        console.log("🔄 Usando autenticação local");
+                        const localUser = {
+                            uid: `local-${Math.random().toString(36).substring(2, 15)}`,
+                            isAnonymous: true
+                        };
+                        
+                        // Atualizar sessão
+                        const session = Storage.getSession() || {};
+                        session.userId = localUser.uid;
+                        Storage.saveSession(session);
+                    }
                   });
             }
             
-            // Check for enhanced systems
+            // Verificar sistemas aprimorados
             setTimeout(function() {
-                console.log("🔍 Checking for enhanced systems...");
+                console.log("🔍 Verificando sistemas aprimorados...");
                 
-                // Check if enhanced systems are working
+                // Verificar se os sistemas estão funcionando
                 if (!window.cardGenerator) {
-                    console.error("⚠️ Card Generator not loaded properly!");
+                    console.error("⚠️ Gerador de Cartas não carregado corretamente!");
                 }
                 
                 if (!window.enhancedGameModes) {
-                    console.error("⚠️ Enhanced Game Modes not loaded properly!");
+                    console.error("⚠️ Modos de Jogo Aprimorados não carregados corretamente!");
                 }
                 
                 if (!window.enhancedCardRenderer) {
-                    console.error("⚠️ Enhanced Card Renderer not loaded properly!");
+                    console.error("⚠️ Renderizador de Cartas Aprimorado não carregado corretamente!");
                 }
                 
-                // Replace standard systems with enhanced versions if needed
+                // Substituir sistemas padrão por versões aprimoradas, se necessário
                 if (window.cardRenderer && window.enhancedCardRenderer) {
                     window.cardRenderer = window.enhancedCardRenderer;
-                    console.log("✅ Enhanced Card Renderer activated");
+                    console.log("✅ Renderizador de Cartas Aprimorado ativado");
                 }
                 
                 if (window.GameModes && window.enhancedGameModes) {
                     window.GameModes = window.enhancedGameModes;
-                    console.log("✅ Enhanced Game Modes activated");
+                    console.log("✅ Modos de Jogo Aprimorados ativados");
                 }
                 
-                // Check cards when in game screen
+                // Verificar cartas quando na tela de jogo
                 const gameScreen = document.getElementById('game-screen');
                 if (gameScreen && gameScreen.classList.contains('active')) {
                     const playerHand = document.getElementById('player-hand');
                     if (!playerHand || playerHand.children.length === 0) {
-                        console.log("🃏 Forcing card generation...");
+                        console.log("🃏 Forçando geração de cartas...");
                         if (typeof forceCardGeneration === 'function') {
                             forceCardGeneration();
                         } else if (window.unoMasterFix && typeof window.unoMasterFix.generatePlayerCards === 'function') {
@@ -185,16 +747,34 @@
                     }
                 }
                 
-                console.log("🎮 UNO Game - Enhanced version loaded at: 2025-04-14 14:41:01");
+                console.log("🎮 UNO Game - Versão aprimorada carregada em: 2025-04-14 14:48:21");
             }, 1000);
             
-            // Update game modes display in the UI
+            // Atualizar exibição de modos de jogo na interface
             setTimeout(updateGameModesDisplay, 500);
+            
+            // Atualizar informações de versão
+            updateVersionInfo();
         });
         
-        // Function to update game modes display in the UI
+        // Função para atualizar informações de versão
+        function updateVersionInfo() {
+            const versionInfo = document.querySelector('.version-info');
+            
+            if (versionInfo) {
+                versionInfo.innerHTML = `
+                    v2.1.0 - Atualizado em 2025-04-14 14:48:21<br>
+                    Desenvolvido por Duduxindev
+                `;
+            }
+            
+            // Atualizar título da página
+            document.title = "UNO Online v2.1.0 - Duduxindev";
+        }
+        
+        // Função para atualizar a exibição de modos de jogo na interface
         function updateGameModesDisplay() {
-            // Add new game modes to UI
+            // Adicionar novos modos de jogo à interface
             const modesContainer = document.querySelector('.modes-container');
             if (modesContainer && window.enhancedGameModes) {
                 const newModes = ['insane', 'mirror', 'quickDraw', 'challenge'];
@@ -213,15 +793,15 @@
                         `;
                         
                         modeCard.addEventListener('click', function() {
-                            // Remove selected class from all mode cards
+                            // Remover classe "selected" de todos os cartões de modo
                             document.querySelectorAll('.mode-card').forEach(card => {
                                 card.classList.remove('selected');
                             });
                             
-                            // Add selected class to clicked card
+                            // Adicionar classe "selected" ao cartão clicado
                             this.classList.add('selected');
                             
-                            // Update mode description
+                            // Atualizar descrição do modo
                             const modeDescription = document.getElementById('mode-description');
                             if (modeDescription) {
                                 modeDescription.textContent = modeInfo.description;
@@ -237,10 +817,10 @@
                     }
                 });
                 
-                console.log("✅ Game modes UI updated with new modes");
+                console.log("✅ Interface de modos de jogo atualizada com novos modos");
             }
             
-            // Do the same for online room modes
+            // Fazer o mesmo para os modos de sala online
             const roomModeSelect = document.getElementById('room-mode');
             if (roomModeSelect && window.enhancedGameModes) {
                 const newModes = ['insane', 'mirror', 'quickDraw', 'challenge'];
@@ -259,7 +839,7 @@
     </script>
     
     <style>
-        /* Styles for the start game button with pulsation */
+        /* Estilos para botão de iniciar jogo com pulsação */
         .pulse-button {
             position: relative;
             overflow: hidden;
@@ -293,7 +873,7 @@
             100% { transform: translateX(100%) rotate(45deg); opacity: 0; }
         }
         
-        /* Highlight game modes */
+        /* Destacar modos de jogo */
         .mode-card {
             background-color: #f5f5f5;
             border-radius: 8px;
@@ -319,7 +899,51 @@
             transform: translateY(-5px);
         }
         
-        /* Enhanced sparkle effect for legendary cards */
+        .modes-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .mode-icon {
+            background-color: #2196F3;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin: 0 auto 10px;
+        }
+        
+        .mode-card h4 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+        }
+        
+        .mode-card p {
+            margin: 0;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .mode-description {
+            background-color: rgba(0,0,0,0.05);
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .mode-description.highlight {
+            background-color: rgba(33, 150, 243, 0.1);
+        }
+        
+        /* Efeito de brilho aprimorado para cartas lendárias */
         @keyframes legendary-sparkle {
             0% { 
                 box-shadow: 0 0 20px 5px rgba(255, 215, 0, 0.6);
@@ -338,59 +962,105 @@
         .legendary-card {
             animation: legendary-sparkle 2s infinite;
         }
-    </style>
-    
-    <!-- Emergency fixes -->
-    <script>
-    console.log("🔄 Complete load, checking final state...");
-    setTimeout(function() {
-        // Check Firebase
-        if (typeof firebase === 'undefined' || typeof FirebaseUtil === 'undefined') {
-            console.error("❌ Firebase still not available after final check!");
-            
-            // Create FirebaseUtil object as fallback
-            window.FirebaseUtil = {
-                generateRoomCode: function() {
-                    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-                    let code = '';
-                    for (let i = 0; i < 4; i++) {
-                        code += chars.charAt(Math.floor(Math.random() * chars.length));
-                    }
-                    return code;
-                },
-                
-                getRoomRef: function(roomCode) {
-                    return firebase ? firebase.database().ref(`rooms/${roomCode}`) : null;
-                },
-                
-                checkRoomExists: async function(roomCode) {
-                    try {
-                        if (!firebase) return false;
-                        const snapshot = await firebase.database().ref(`rooms/${roomCode}`).once('value');
-                        return snapshot.exists();
-                    } catch (error) {
-                        console.error("Error checking room:", error);
-                        return false;
-                    }
-                },
-                
-                getServerTimestamp: function() {
-                    return firebase && firebase.database ? firebase.database.ServerValue.TIMESTAMP : Date.now();
-                }
-            };
+        
+        /* Estilos para tela de vitória lendária */
+        .victory-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            animation: fade-in 1s ease;
         }
         
-        // Check for enhanced card systems
+        .victory-content {
+            background: linear-gradient(135deg, #2C3E50 0%, #4B6584 100%);
+            border-radius: 15px;
+            padding: 40px;
+            max-width: 80%;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.6);
+            border: 3px solid #FFD700;
+            color: white;
+        }
+        
+        .victory-content h1 {
+            color: #FFD700;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            animation: pulse-text 2s infinite;
+        }
+        
+        .victory-content p {
+            font-size: 1.2rem;
+            margin: 15px 0;
+        }
+        
+        .back-to-menu-btn {
+            background-color: #FFD700;
+            border: none;
+            border-radius: 30px;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            color: #333;
+            font-weight: bold;
+            margin-top: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+        }
+        
+        .back-to-menu-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(255, 215, 0, 0.6);
+        }
+        
+        @keyframes pulse-text {
+            0% { text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+            50% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
+            100% { text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+        }
+        
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+    
+    <!-- Correções emergenciais -->
+    <script>
+    console.log("🔄 Verificação final do sistema em: 2025-04-14 14:48:21");
+    setTimeout(function() {
+        // Verificar Firebase
+        if (typeof firebase === 'undefined' || typeof FirebaseUtil === 'undefined') {
+            console.error("❌ Firebase ainda não está disponível após verificação final!");
+            
+            // Ativar o sistema de fallback para garantir que o jogo funcione
+            if (window.firebaseFallback) {
+                window.firebaseFallback.patchFirebaseMethods();
+                console.log("✅ Sistema de fallback ativado com sucesso");
+            } else {
+                console.error("❌ Sistema de fallback não está disponível!");
+            }
+        }
+        
+        // Verificar sistemas aprimorados de cartas
         if (window.gameInitializer && window.cardGenerator) {
-            // Patch the createAndShuffleDeck method with the new card generator
+            // Substituir o método createAndShuffleDeck pelo gerador de cartas aprimorado
             const originalCreateDeck = window.gameInitializer.createAndShuffleDeck;
             window.gameInitializer.createAndShuffleDeck = function(gameMode) {
-                console.log("🃏 Using enhanced card generator for mode:", gameMode);
+                console.log("🃏 Usando gerador de cartas aprimorado para o modo:", gameMode);
                 
-                // Create cards using the enhanced generator
+                // Criar cartas usando o gerador aprimorado
                 const cards = window.cardGenerator.createDeck(gameMode, true);
                 
-                // Return in the format expected by the game
+                // Retornar no formato esperado pelo jogo
                 return {
                     cards: cards,
                     drawCard: function() {
@@ -405,34 +1075,34 @@
                 };
             };
             
-            console.log("✅ Enhanced card generation system activated");
+            console.log("✅ Sistema de geração de cartas aprimorado ativado");
         }
         
-        // Check cards when in game screen
+        // Verificar cartas quando na tela de jogo
         const gameScreen = document.getElementById('game-screen');
         if (gameScreen && gameScreen.classList.contains('active')) {
             const playerHand = document.getElementById('player-hand');
             if (!playerHand || playerHand.children.length === 0) {
-                console.log("🃏 Final check: manually generating cards");
+                console.log("🃏 Verificação final: gerando cartas manualmente");
                 
-                // Emergency function to generate cards
+                // Função emergencial para gerar cartas
                 function emergencyCardGeneration() {
                     const playerHand = document.getElementById('player-hand');
                     if (!playerHand) return;
                     
-                    // Clear current hand
+                    // Limpar mão atual
                     playerHand.innerHTML = '';
                     
-                    // Colors and values
+                    // Cores e valores
                     const colors = ['red', 'blue', 'green', 'yellow'];
                     const values = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'skip', 'reverse', 'draw2'];
                     
-                    // Generate 7 cards
+                    // Gerar 7 cartas
                     for (let i = 0; i < 7; i++) {
                         const color = colors[Math.floor(Math.random() * colors.length)];
                         const value = values[Math.floor(Math.random() * values.length)];
                         
-                        // Create card
+                        // Criar carta
                         const card = document.createElement('div');
                         card.className = `card ${color}`;
                         card.dataset.id = `emergency-${i}-${Date.now()}`;
@@ -440,7 +1110,7 @@
                         card.dataset.value = value;
                         card.dataset.type = isNaN(value) ? 'action' : 'number';
                         
-                        // Create card inner content
+                        // Criar conteúdo interno da carta
                         card.innerHTML = `
                             <div class="card-inner">
                                 <div class="card-corners">
@@ -452,7 +1122,7 @@
                             </div>
                         `;
                         
-                        // Maybe add a legendary card with very low chance
+                        // Possibilidade de adicionar carta lendária com chance extremamente baixa
                         if (Math.random() < 0.0000001) {
                             const legendaryCard = document.createElement('div');
                             legendaryCard.className = 'card gold legendary-card';
@@ -482,7 +1152,7 @@
                         }
                     }
                     
-                    // Update counter
+                    // Atualizar contador
                     const cardCounter = document.getElementById('card-count');
                     if (cardCounter) {
                         cardCounter.textContent = '7 cartas';
@@ -493,7 +1163,7 @@
             }
         }
         
-        console.log("✅ Final check completed at: 2025-04-14 14:41:01");
+        console.log("✅ Verificação final concluída em: 2025-04-14 14:48:21");
     }, 3000);
     </script>
 </body>
