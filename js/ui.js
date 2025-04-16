@@ -90,18 +90,27 @@ const UI = {
         });
       });
   
-      // Modo de jogo personalizado
+      // Modo de jogo personalizado e No Mercy
       const classicMode = document.getElementById('classic-mode');
       const customMode = document.getElementById('custom-mode');
+      const nomercyMode = document.getElementById('nomercy-mode');
       const customRules = document.getElementById('custom-rules');
+      const nomercyRules = document.getElementById('nomercy-rules');
   
-      if (classicMode && customMode && customRules) {
+      if (classicMode && customMode && nomercyMode && customRules && nomercyRules) {
         classicMode.addEventListener('change', () => {
           customRules.classList.add('hidden');
+          nomercyRules.classList.add('hidden');
         });
   
         customMode.addEventListener('change', () => {
           customRules.classList.remove('hidden');
+          nomercyRules.classList.add('hidden');
+        });
+        
+        nomercyMode.addEventListener('change', () => {
+          customRules.classList.add('hidden');
+          nomercyRules.classList.remove('hidden');
         });
       }
   
@@ -157,7 +166,70 @@ const UI = {
           const seed = Math.random().toString(36).substring(2, 10);
           currentAvatar.src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${seed}`;
           document.getElementById('avatar-seed').value = seed;
+          
+          // Remover avatarURL se estiver usando avatar gerado
+          localStorage.removeItem('avatarURL');
+          localStorage.setItem('avatar', seed);
         });
+      }
+      
+      // Upload de avatar
+      const uploadAvatarBtn = document.getElementById('upload-avatar');
+      const avatarUploadInput = document.getElementById('avatar-upload');
+      
+      if (uploadAvatarBtn && avatarUploadInput) {
+        uploadAvatarBtn.addEventListener('click', () => {
+          avatarUploadInput.click();
+        });
+        
+        avatarUploadInput.addEventListener('change', (e) => {
+          if (e.target.files && e.target.files[0]) {
+            this.handleAvatarUpload(e.target.files[0]);
+          }
+        });
+      }
+    },
+  
+    // Tratar upload de avatar
+    async handleAvatarUpload(file) {
+      if (!file || !auth.currentUser) return;
+      
+      try {
+        // Validar tamanho e tipo
+        if (file.size > 2 * 1024 * 1024) { // 2MB max
+          this.showToast('A imagem deve ter no máximo 2MB!', 'error');
+          return;
+        }
+        
+        if (!file.type.match('image.*')) {
+          this.showToast('O arquivo selecionado não é uma imagem!', 'error');
+          return;
+        }
+        
+        this.showToast('Enviando imagem...', 'info');
+        
+        // Referência para o storage
+        const userId = auth.currentUser.uid;
+        const storageRef = storage.ref();
+        const avatarRef = storageRef.child(`avatars/${userId}`);
+        
+        // Fazer upload
+        await avatarRef.put(file);
+        
+        // Obter URL da imagem
+        const avatarURL = await avatarRef.getDownloadURL();
+        
+        // Atualizar avatar no preview
+        document.getElementById('current-avatar').src = avatarURL;
+        
+        // Salvar URL no localStorage
+        localStorage.setItem('avatarURL', avatarURL);
+        localStorage.removeItem('avatar'); // Remover seed do avatar gerado
+        
+        this.showToast('Avatar atualizado com sucesso!', 'success');
+      } catch (error) {
+        console.error('Erro ao fazer upload do avatar:', error);
+        this.showToast('Erro ao fazer upload do avatar: ' + error.message, 'error');
       }
     },
   

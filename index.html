@@ -77,6 +77,15 @@
                         </div>
                         <button type="submit" class="btn btn-primary">Registrar</button>
                     </form>
+                    <!-- Login com Google -->
+                    <div class="social-login">
+                        <hr>
+                        <p>Ou entre com:</p>
+                        <button id="google-login" class="btn btn-social">
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                            Google
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -167,6 +176,13 @@
                                     <span>Personalizado</span>
                                 </label>
                             </div>
+                            <div class="game-mode">
+                                <input type="radio" id="nomercy-mode" name="game-mode" value="nomercy">
+                                <label for="nomercy-mode">
+                                    <div class="mode-icon"><i class="fas fa-skull"></i></div>
+                                    <span>No Mercy</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
                     <div id="custom-rules" class="custom-rules hidden">
@@ -187,6 +203,16 @@
                             <input type="checkbox" id="rule-special99">
                             <label for="rule-special99">Chance rara de carta +99 (1%)</label>
                         </div>
+                    </div>
+                    <div id="nomercy-rules" class="custom-rules hidden">
+                        <h3>Regras No Mercy</h3>
+                        <p class="warning-text">Atenção: No modo No Mercy, todas as regras são implantadas para maximizar a competição!</p>
+                        <ul class="nomercy-rules-list">
+                            <li>Empilhamento ilimitado de cartas +2 e +4</li>
+                            <li>Chance aumentada de carta +99 (5%)</li>
+                            <li>Sem perdão para quem esquece de gritar UNO</li>
+                            <li>Jogadores devem sempre jogar uma carta válida se possuírem</li>
+                        </ul>
                     </div>
                     <button type="submit" class="btn btn-primary">Criar Sala</button>
                 </form>
@@ -226,6 +252,7 @@
             </div>
             <div class="room-actions">
                 <button id="btn-start-game" class="btn btn-primary hidden"><i class="fas fa-play"></i> Iniciar Jogo</button>
+                <button id="btn-end-game" class="btn btn-warning hidden"><i class="fas fa-stop"></i> Encerrar Jogo</button>
                 <button id="btn-leave-room" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Sair</button>
             </div>
         </div>
@@ -411,10 +438,17 @@
                         <input type="text" id="username" placeholder="Seu nome de usuário">
                     </div>
                     <div class="form-group">
-                        <label for="avatar-seed">Avatar</label>
-                        <div class="avatar-selection">
-                            <img id="current-avatar" src="https://api.dicebear.com/6.x/avataaars/svg?seed=default" alt="Avatar">
-                            <button id="randomize-avatar" type="button" class="btn-icon"><i class="fas fa-dice"></i></button>
+                        <label for="avatar-selection">Avatar</label>
+                        <div class="avatar-options">
+                            <div class="avatar-selection">
+                                <img id="current-avatar" src="https://api.dicebear.com/6.x/avataaars/svg?seed=default" alt="Avatar">
+                                <div class="avatar-controls">
+                                    <button id="randomize-avatar" type="button" class="btn-icon"><i class="fas fa-dice"></i></button>
+                                    <button id="upload-avatar" type="button" class="btn-icon"><i class="fas fa-upload"></i></button>
+                                </div>
+                            </div>
+                            <input type="file" id="avatar-upload" accept="image/*" class="hidden">
+                            <input type="hidden" id="avatar-seed" value="default">
                         </div>
                     </div>
                     <div class="form-group">
@@ -450,10 +484,11 @@
     <!-- Toast Notifications -->
     <div id="toast-container" class="toast-container"></div>
 
-    <!-- Firebase Scripts -->
+    <!-- Firebase Scripts - AQUI ESTÁ A CORREÇÃO DA ORDEM DOS SCRIPTS -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
     
     <!-- Game Scripts -->
     <script src="js/firebase.js"></script>
