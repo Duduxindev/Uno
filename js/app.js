@@ -1,7 +1,14 @@
 // Aplicação principal
 document.addEventListener('DOMContentLoaded', () => {
-    // Inicializar a UI
-    UI.init();
+    // Inicializar a UI (corrigido para garantir execução)
+    try {
+      UI.init();
+      console.log("UI inicializado com sucesso!");
+    } catch(error) {
+      console.error("Erro ao inicializar UI:", error);
+      // Em caso de erro, remover preloader manualmente
+      document.getElementById('preloader').style.display = 'none';
+    }
     
     // Configurar autenticação
     setupAuth();
