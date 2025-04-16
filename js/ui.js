@@ -47,17 +47,24 @@ const UI = {
       this.setupEventListeners();
     },
   
-    // Esconde o preloader
+    // Esconde o preloader (CORRIGIDO)
     hidePreloader() {
+      // Referência direta para garantir que o elemento seja encontrado
+      const preloader = document.getElementById('preloader');
+      
+      // Remover imediatamente em vez de usar transição
       setTimeout(() => {
-        this.elements.preloader.style.opacity = '0';
+        preloader.style.opacity = '0';
+        preloader.style.visibility = 'hidden';  // Adiciona visibilidade oculta
+        
+        // Adiciona classe hidden após a transição de opacidade
         setTimeout(() => {
-          this.elements.preloader.classList.add('hidden');
+          preloader.classList.add('hidden');
         }, 300);
-      }, 1500);
+      }, 800); // Reduzido de 1500ms para 800ms
     },
   
-    // Configura os listeners de eventos da UI
+    // Configurar os listeners de eventos da UI
     setupEventListeners() {
       // Tabs de autenticação
       this.elements.tabLogin.addEventListener('click', () => this.switchAuthTab('login'));
