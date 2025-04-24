@@ -15,6 +15,23 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Configurar navegação
   setupNavigation();
+  
+  // Verificar estado de autenticação e configurar header do usuário
+  auth.onAuthStateChanged((user) => {
+    updateUserHeader(user);
+    
+    if (user) {
+      // Usuário já logado
+      if (document.getElementById('btn-play')) {
+        document.getElementById('btn-play').textContent = 'Jogar';
+      }
+    } else {
+      // Usuário não logado
+      if (document.getElementById('btn-play')) {
+        document.getElementById('btn-play').textContent = 'Entrar';
+      }
+    }
+  });
 });
 
 // Configurar autenticação
@@ -99,82 +116,66 @@ function setupAuth() {
       }
     });
   }
+}
+
+// Atualizar o header do usuário baseado no estado de autenticação
+function updateUserHeader(user) {
+  // Remover header existente se houver
+  const existingHeader = document.querySelector('.user-header');
+  if (existingHeader) {
+    existingHeader.remove();
+  }
   
-  // Verificar estado de autenticação
-  auth.onAuthStateChanged((user) => {
-    const btnPlay = document.getElementById('btn-play');
-    const btnLogout = document.getElementById('btn-logout');
-    const userInfo = document.getElementById('user-info');
+  // Adicionar novo header se o usuário estiver logado
+  if (user) {
+    const header = document.createElement('div');
+    header.className = 'user-header';
     
-    if (user) {
-      // Usuário já logado
-      if (btnPlay) {
-        btnPlay.textContent = 'Jogar';
-      }
-      
-      // Mostrar informações do usuário e botão de logout
-      if (btnLogout) {
-        btnLogout.classList.remove('hidden');
-      }
-      
-      if (userInfo) {
-        userInfo.classList.remove('hidden');
-        
-        // Atualizar avatar
-        const userAvatar = document.getElementById('header-user-avatar');
-        if (userAvatar) {
-          const avatarURL = localStorage.getItem('avatarURL');
-          const avatarSeed = localStorage.getItem('avatar') || user.uid;
-          
-          if (avatarURL) {
-            userAvatar.src = avatarURL;
-          } else {
-            userAvatar.src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${avatarSeed}`;
-          }
-        }
-        
-        // Atualizar nome de usuário
-        const userName = document.getElementById('header-user-name');
-        if (userName) {
-          userName.textContent = user.displayName || 'Jogador';
-        }
-      }
+    // Obter avatar do usuário
+    let avatarSrc;
+    const avatarURL = localStorage.getItem('avatarURL');
+    const avatarSeed = localStorage.getItem('avatar');
+    
+    if (avatarURL) {
+      avatarSrc = avatarURL;
+    } else if (avatarSeed) {
+      avatarSrc = `https://api.dicebear.com/6.x/avataaars/svg?seed=${avatarSeed}`;
+    } else if (user.photoURL) {
+      avatarSrc = user.photoURL;
     } else {
-      // Usuário não logado
-      if (btnPlay) {
-        btnPlay.textContent = 'Entrar';
-      }
-      
-      // Esconder informações do usuário e botão de logout
-      if (btnLogout) {
-        btnLogout.classList.add('hidden');
-      }
-      
-      if (userInfo) {
-        userInfo.classList.add('hidden');
-      }
+      avatarSrc = `https://api.dicebear.com/6.x/avataaars/svg?seed=${user.uid}`;
     }
-  });
-  
-  // Logout
-  const btnLogout = document.getElementById('btn-logout');
-  if (btnLogout) {
-    btnLogout.addEventListener('click', async () => {
-      try {
-        await auth.signOut();
-        UI.showToast('Logout realizado com sucesso!', 'success');
-        
-        // Redirecionar para a página inicial se estiver em outra página
-        if (!window.location.pathname.includes('index.html') && !window.location.pathname.endsWith('/')) {
-          window.location.href = 'index.html';
-        } else {
-          UI.showSection('main-menu');
-        }
-      } catch (error) {
-        console.error('Erro ao fazer logout:', error);
-        UI.showToast('Erro ao fazer logout: ' + error.message, 'error');
-      }
-    });
+    
+    header.innerHTML = `
+      <div class="user-info">
+        <div class="user-avatar">
+          <img src="${avatarSrc}" alt="Avatar">
+        </div>
+        <div class="user-name">${user.displayName || 'Usuário'}</div>
+      </div>
+      <button id="btn-logout" class="btn btn-danger btn-logout">
+        <i class="fas fa-sign-out-alt"></i> Sair
+      </button>
+    `;
+    
+    document.body.appendChild(header);
+    
+    // Adicionar event listener para o botão de logout
+    document.getElementById('btn-logout').addEventListener('click', logout);
+  }
+}
+
+// Função para logout
+async function logout() {
+  try {
+    await auth.signOut();
+    UI.showToast('Logout realizado com sucesso!', 'success');
+    
+    // Redirecionar para a página inicial
+    window.location.href = 'index.html';
+  } catch (error) {
+    console.error('Erro ao fazer logout:', error);
+    UI.showToast('Erro ao fazer logout: ' + error.message, 'error');
   }
 }
 
@@ -238,6 +239,9 @@ function setupNavigation() {
         await auth.currentUser.updateProfile({
           displayName: username
         });
+        
+        // Atualizar header do usuário
+        updateUserHeader(auth.currentUser);
       }
       
       if (avatarSeed) {
@@ -251,15 +255,6 @@ function setupNavigation() {
       
       UI.closeModal(UI.elements.settingsModal);
       UI.showToast('Configurações salvas com sucesso!', 'success');
-      
-      // Atualizar o header se estiver presente
-      const headerUserName = document.getElementById('header-user-name');
-      if (headerUserName && auth.currentUser) {
-        headerUserName.textContent = auth.currentUser.displayName || 'Jogador';
-      }
-      
-      // Atualizar avatar no header se estiver presente
-      updateUserAvatar();
     });
   }
   
@@ -283,28 +278,5 @@ function setupNavigation() {
       document.getElementById('music-enabled').checked = localStorage.getItem('musicEnabled') !== 'false';
       document.getElementById('volume').value = localStorage.getItem('volume') || 50;
     });
-  }
-  
-  // Visualização da skin do jogador ao clicar no avatar
-  const headerUserAvatar = document.getElementById('header-user-avatar');
-  if (headerUserAvatar) {
-    headerUserAvatar.addEventListener('click', () => {
-      UI.showModal(document.getElementById('avatar-preview-modal'));
-    });
-  }
-}
-
-// Função para atualizar o avatar do usuário no header
-function updateUserAvatar() {
-  const headerUserAvatar = document.getElementById('header-user-avatar');
-  if (headerUserAvatar && auth.currentUser) {
-    const avatarURL = localStorage.getItem('avatarURL');
-    const avatarSeed = localStorage.getItem('avatar') || auth.currentUser.uid;
-    
-    if (avatarURL) {
-      headerUserAvatar.src = avatarURL;
-    } else {
-      headerUserAvatar.src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${avatarSeed}`;
-    }
   }
 }

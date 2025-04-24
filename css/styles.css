@@ -92,7 +92,12 @@ body {
   color: var(--light);
 }
 
-.btn:hover {
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn:not(:disabled):hover {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
@@ -130,6 +135,51 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Header com usuário */
+.user-header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  z-index: 100;
+  background-color: rgba(35, 35, 35, 0.8);
+  backdrop-filter: blur(5px);
+  border-bottom-left-radius: 10px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--primary);
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.btn-logout {
+  padding: 8px 12px;
+  font-size: 14px;
 }
 
 /* Main Menu */
@@ -417,7 +467,8 @@ body {
   height: 100%;
   overflow: auto;
   background-color: rgba(0, 0, 0, 0.7);
-  animation: fadeIn 0.3s;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 @keyframes fadeIn {
@@ -432,12 +483,16 @@ body {
   max-width: 600px;
   border-radius: 10px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-  animation: slideIn 0.3s;
+  transition: transform 0.3s ease;
+  transform: translateY(-30px);
 }
 
-@keyframes slideIn {
-  from { transform: translateY(-50px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+.modal.show {
+  opacity: 1;
+}
+
+.modal.show .modal-content {
+  transform: translateY(0);
 }
 
 .modal-header {
@@ -532,6 +587,7 @@ body {
   width: 40px;
   height: 40px;
   border-radius: 50%;
+  object-fit: cover;
 }
 
 .player-info {
@@ -584,6 +640,27 @@ body {
   gap: 5px;
 }
 
+.opponent-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--white);
+}
+
+.opponent-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.opponent-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--white);
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+}
+
 .opponent-cards {
   display: flex;
   position: relative;
@@ -604,6 +681,11 @@ body {
 
 .opponent-cards .uno-card.back:hover {
   transform: translateY(-5px) rotate(-5deg);
+}
+
+.opponent.current-turn .opponent-avatar {
+  border: 3px solid var(--yellow);
+  box-shadow: 0 0 10px var(--yellow);
 }
 
 .center-area {
@@ -699,6 +781,26 @@ body {
   background: rgba(0, 0, 0, 0.5);
 }
 
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.player-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid var(--primary);
+}
+
+.player-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .player-hand {
   display: flex;
   overflow-x: auto;
@@ -725,6 +827,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 20px;
+  z-index: 10;
 }
 
 .players-needed {
@@ -859,6 +962,7 @@ body {
   border-radius: 50%;
   border: 5px solid var(--success);
   animation: winner-pulse 2s infinite;
+  object-fit: cover;
 }
 
 @keyframes winner-pulse {
@@ -1006,6 +1110,7 @@ body {
   height: 80px;
   border-radius: 50%;
   border: 3px solid var(--primary);
+  object-fit: cover;
 }
 
 .toggle-container {
@@ -1091,7 +1196,7 @@ input[type="range"]::-webkit-slider-thumb {
 /* Mode Selection */
 .mode-selection {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* Atualizado para 3 colunas */
+  grid-template-columns: repeat(3, 1fr);
   gap: 15px;
 }
 
@@ -1214,12 +1319,6 @@ input[type="range"]::-webkit-slider-thumb {
   gap: 10px;
 }
 
-.avatar-selection {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
 /* Estilos para jogadores na sala */
 .player-previews {
   display: flex;
@@ -1244,6 +1343,7 @@ input[type="range"]::-webkit-slider-thumb {
   border-radius: 50%;
   border: 3px solid var(--primary);
   margin-bottom: 10px;
+  object-fit: cover;
 }
 
 .player-preview.host img {
@@ -1264,6 +1364,65 @@ input[type="range"]::-webkit-slider-thumb {
   font-size: 10px;
   font-weight: 700;
   margin-top: 5px;
+}
+
+/* Estilos para o lobby da sala */
+.lobby-container {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+  height: calc(100vh - 200px);
+}
+
+.lobby-players-section {
+  background-color: var(--card-bg);
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.lobby-chat-section {
+  height: 100%;
+}
+
+.chat-container.full-height {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-container.full-height .chat-messages {
+  flex: 1;
+  height: auto;
+}
+
+.room-lobby-header {
+  background-color: var(--card-bg);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.room-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 8px 15px;
+  border-radius: 6px;
+}
+
+.lobby-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 /* ==================== */
@@ -1567,10 +1726,20 @@ input[type="range"]::-webkit-slider-thumb {
   .chat-container {
     position: fixed;
   }
+  
+  .lobby-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .lobby-players-section {
+    max-height: 300px;
+    overflow-y: auto;
+  }
 }
 
 @media (max-width: 768px) {
-  .room-header {
+  .room-header,
+  .room-lobby-header {
     flex-direction: column;
     gap: 15px;
   }
@@ -1612,6 +1781,25 @@ input[type="range"]::-webkit-slider-thumb {
   .uno-card.draw-two::before {
     font-size: 40px;
   }
+  
+  .mode-selection {
+    grid-template-columns: 1fr;
+  }
+  
+  .user-header {
+    padding: 5px 10px;
+    gap: 5px;
+  }
+  
+  .user-avatar {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .btn-logout {
+    padding: 5px 8px;
+    font-size: 12px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1636,5 +1824,9 @@ input[type="range"]::-webkit-slider-thumb {
   
   .uno-card.number {
     font-size: 30px;
+  }
+  
+  .player-info {
+    display: none;
   }
 }
