@@ -11,51 +11,86 @@ const Room = {
   
   // Inicializar sala
   async initRoom(roomId) {
-    this.roomId = roomId;
-    this.roomRef = database.ref(`rooms/${roomId}`);
-    
-    // Verificar se a sala existe
-    const roomSnapshot = await this.roomRef.once('value');
-    const room = roomSnapshot.val();
-    
-    if (!room) {
-      UI.showToast('Sala não encontrada!', 'error');
-      if (window.location.pathname.includes('game.html')) {
-        window.location.href = 'lobby.html';
-      } else {
-        window.location.href = 'index.html';
+    try {
+      // CORREÇÃO: Verificar se o roomId é válido
+      if (!roomId) {
+        UI.showToast('ID da sala inválido!', 'error');
+        throw new Error('ID da sala inválido');
       }
-      return;
-    }
-    
-    // Verificar se é o host
-    this.isHost = room.hostId === auth.currentUser.uid;
-    
-    // Entrar na sala
-    await this.joinRoom();
-    
-    // Inicializar o chat
-    Chat.initChat(roomId);
-    
-    // Atualizar informações da sala
-    this.updateRoomInfo(room);
-    
-    if (window.location.pathname.includes('game.html')) {
-      // Estamos na página do jogo, renderizar jogadores
-      this.renderPlayers(room);
-    }
-    
-    // Configurar event listeners
-    this.setupRoomEventListeners();
-    
-    // Mostrar a seção do jogo ou a seção da sala
-    if (window.location.pathname.includes('game.html')) {
-      // Estamos na página do jogo, inicializar o jogo
-      Game.initGame(roomId, this.isHost);
-    } else if (window.location.pathname.includes('lobby.html')) {
-      // Estamos na página do lobby, mostrar a seção da sala
-      UI.showSection('room-lobby-section');
-      this.updateLobbyInfo();
+
+      this.roomId = roomId;
+      this.roomRef = database.ref(`rooms/${roomId}`);
+      
+      // Verificar se a sala existe
+      const roomSnapshot = await this.roomRef.once('value');
+      const room = roomSnapshot.val();
+      
+      if (!room) {
+        UI.showToast('Sala não encontrada!', 'error');
+        if (window.location.pathname.includes('game.html')) {
+          window.location.href = 'lobby.html';
+        } else {
+          UI.showSection('rooms-section'); // CORREÇÃO: Voltar para a lista de salas
+          return; // Não continuar com a inicialização
+        }
+        return;
+      }
+      
+      // Verificar se é o host
+      this.isHost = room.hostId === auth.currentUser.uid;
+      
+      // CORREÇÃO: Não permitir entrada em sala de jogo em andamento exceto para jogadores já na sala
+      if (room.status === 'playing' && !room.players[auth.currentUser.uid] && !window.location.pathname.includes('game.html')) {
+        UI.showToast('Jogo já em andamento!', 'error');
+        UI.showSection('rooms-section'); // Voltar para a lista de salas
+        return;
+      }
+      
+      // Entrar na sala
+      const joinSuccess = await this.joinRoom();
+      if (!joinSuccess) {
+        // CORREÇÃO: Se não conseguir entrar, voltar para a lista de salas
+        UI.showToast('Não foi possível entrar na sala!', 'error');
+        UI.showSection('rooms-section');
+        return;
+      }
+      
+      // Inicializar o chat
+      try {
+        Chat.initChat(roomId);
+      } catch (chatError) {
+        console.error('Erro ao iniciar chat:', chatError);
+        // Não impede a entrada na sala
+      }
+      
+      // Atualizar informações da sala
+      this.updateRoomInfo(room);
+      
+      if (window.location.pathname.includes('game.html')) {
+        // Estamos na página do jogo, renderizar jogadores
+        this.renderPlayers(room);
+      }
+      
+      // Configurar event listeners
+      this.setupRoomEventListeners();
+      
+      // Mostrar a seção do jogo ou a seção da sala
+      if (window.location.pathname.includes('game.html')) {
+        // Estamos na página do jogo, inicializar o jogo
+        if (typeof Game !== 'undefined') {
+          Game.initGame(roomId, this.isHost);
+        }
+      } else if (window.location.pathname.includes('lobby.html')) {
+        // Estamos na página do lobby, mostrar a seção da sala
+        UI.showSection('room-lobby-section');
+        this.updateLobbyInfo();
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Erro ao inicializar sala:', error);
+      UI.showToast('Erro ao inicializar sala: ' + error.message, 'error');
+      return false;
     }
   },
 
@@ -98,6 +133,19 @@ const Room = {
       
       // Salvar a sala no Firebase
       await roomRef.set(roomInfo);
+      
+      // Registrar na lista de salas recentes do usuário
+      try {
+        const userRoomsRef = database.ref(`users/${auth.currentUser.uid}/rooms/${roomId}`);
+        await userRoomsRef.set({
+          roomId: roomId,
+          timestamp: firebase.database.ServerValue.TIMESTAMP,
+          name: roomData.name
+        });
+      } catch (userRoomError) {
+        console.warn('Erro ao salvar sala nos dados do usuário:', userRoomError);
+        // Não deve impedir a criação da sala
+      }
       
       UI.showToast('Sala criada com sucesso!', 'success');
       
@@ -161,7 +209,25 @@ const Room = {
         });
         
         // Notificar outros jogadores
-        Chat.sendSystemMessage(`${auth.currentUser.displayName || 'Novo jogador'} entrou na sala.`);
+        await Chat.sendSystemMessage(`${auth.currentUser.displayName || 'Novo jogador'} entrou na sala.`);
+        
+        // Registrar na lista de salas recentes do usuário
+        try {
+          const roomSnapshot = await database.ref(`rooms/${this.roomId}`).once('value');
+          const room = roomSnapshot.val();
+          
+          if (room) {
+            const userRoomsRef = database.ref(`users/${auth.currentUser.uid}/rooms/${this.roomId}`);
+            await userRoomsRef.set({
+              roomId: this.roomId,
+              timestamp: firebase.database.ServerValue.TIMESTAMP,
+              name: room.name
+            });
+          }
+        } catch (userRoomError) {
+          console.warn('Erro ao salvar sala nos dados do usuário:', userRoomError);
+          // Não deve impedir a entrada na sala
+        }
       }
       
       // Atualizar status de presença
@@ -238,6 +304,10 @@ const Room = {
 
   // Atualizar presença do jogador
   updatePresence() {
+    if (this.presenceInterval) {
+      clearInterval(this.presenceInterval);
+    }
+    
     const presenceRef = database.ref(`rooms/${this.roomId}/players/${auth.currentUser.uid}/lastActive`);
     
     // Atualizar timestamp a cada 30 segundos
@@ -398,7 +468,7 @@ const Room = {
           </div>
           <div class="player-info">
             <div class="player-name">${player.name} ${player.id === auth.currentUser.uid ? '(Você)' : ''}</div>
-                        <div class="player-cards-count">Cartas: ${player.cards ? player.cards.length : 0}</div>
+            <div class="player-cards-count">Cartas: ${player.cards ? player.cards.length : 0}</div>
           </div>
           ${player.isHost ? '<span class="player-host-badge">Host</span>' : ''}
         `;
@@ -441,7 +511,7 @@ const Room = {
     });
   },
 
-  // Encerrar jogo (quando ainda não começou)
+  // Encerrar jogo (quando ainda não começou ou para forçar encerramento)
   async endGame() {
     try {
       // Verificar se é o host
@@ -453,11 +523,6 @@ const Room = {
         return false;
       }
       
-      if (room.status === 'playing') {
-        UI.showToast('Não é possível encerrar um jogo em andamento!', 'error');
-        return false;
-      }
-      
       // Resetar o jogo
       await this.roomRef.update({
         status: 'waiting',
@@ -466,6 +531,18 @@ const Room = {
       
       // Resetar o estado do jogo
       await database.ref(`games/${this.roomId}`).remove();
+      
+      // Limpar cartas dos jogadores
+      const playersRef = database.ref(`rooms/${this.roomId}/players`);
+      const playersSnapshot = await playersRef.once('value');
+      const players = playersSnapshot.val();
+      
+      if (players) {
+        for (const playerId in players) {
+          await database.ref(`rooms/${this.roomId}/players/${playerId}/cards`).remove();
+          await database.ref(`rooms/${this.roomId}/players/${playerId}/uno`).remove();
+        }
+      }
       
       // Notificar outros jogadores
       Chat.sendSystemMessage('O host encerrou o jogo.');
