@@ -232,6 +232,12 @@ const Lobby = {
   // Entrar em uma sala
   async joinRoom(roomId) {
     try {
+      // CORREÇÃO: Garantir que roomId é válido
+      if (!roomId) {
+        UI.showToast('ID da sala inválido!', 'error');
+        return;
+      }
+
       // Verificar se a sala existe e tem espaço
       const roomSnapshot = await database.ref(`rooms/${roomId}`).once('value');
       const room = roomSnapshot.val();
@@ -253,13 +259,25 @@ const Lobby = {
         return;
       }
       
-      // Se estamos na página de lobby, mostrar a seção de sala
+      // CORREÇÃO: Usar timeout para garantir que o redirecionamento aconteça
       if (window.location.pathname.includes('lobby.html')) {
-        await Room.initRoom(roomId);
-        UI.showToast('Entrando na sala...', 'success');
+        // CORREÇÃO: Garantir que Room.initRoom é executado corretamente
+        try {
+          await Room.initRoom(roomId);
+          UI.showToast('Entrando na sala...', 'success');
+        } catch (error) {
+          console.error('Erro ao inicializar sala:', error);
+          UI.showToast('Erro ao entrar na sala. Tentando novamente...', 'error');
+          setTimeout(() => this.joinRoom(roomId), 1000);
+        }
       } else {
+        // CORREÇÃO: Salvar o roomId em localStorage para recuperação em caso de erro
+        localStorage.setItem('pendingRoomId', roomId);
+        UI.showToast('Redirecionando para a sala...', 'info');
         // Se não, redirecionar para a página de lobby com o ID da sala
-        window.location.href = `lobby.html?roomId=${roomId}`;
+        setTimeout(() => {
+          window.location.href = `lobby.html?roomId=${roomId}`;
+        }, 500);
       }
     } catch (error) {
       console.error('Erro ao entrar na sala:', error);
@@ -352,30 +370,50 @@ const Lobby = {
         return;
       }
       
-      // Criar sala
-      const roomData = {
-        name,
-        capacity,
-        isPrivate,
-        code,
-        gameMode,
-        stackDraw2,
-        stackDraw4,
-        forcePlay,
-        special99
-      };
+      UI.showToast('Criando sala...', 'info');
       
-      const roomId = await Room.createRoom(roomData);
-      
-      if (roomId) {
-        // Fechar modal
-        UI.closeModal(UI.elements.createRoomModal);
+      // CORREÇÃO: Adicionar mais informações de feedback
+      try {
+        // Criar sala
+        const roomData = {
+          name,
+          capacity,
+          isPrivate,
+          code,
+          gameMode,
+          stackDraw2,
+          stackDraw4,
+          forcePlay,
+          special99
+        };
         
-        // Limpar formulário
-        document.getElementById('create-room-form').reset();
+        const roomId = await Room.createRoom(roomData);
         
-        // Ir para a sala
-        await this.joinRoom(roomId);
+        if (roomId) {
+          // Fechar modal
+          UI.closeModal(UI.elements.createRoomModal);
+          
+          // Limpar formulário
+          document.getElementById('create-room-form').reset();
+          
+          // CORREÇÃO: Melhorar o processo de entrada na sala
+          UI.showToast('Sala criada! Entrando na sala...', 'success');
+          
+          // Garantir tempo para o Firebase sincronizar
+          setTimeout(async () => {
+            try {
+              // Ir para a sala
+              await this.joinRoom(roomId);
+            } catch (joinError) {
+              console.error('Erro ao entrar na sala após criação:', joinError);
+              // Última tentativa - recarregar a página com o roomId na URL
+              window.location.href = `lobby.html?roomId=${roomId}`;
+            }
+          }, 1000);
+        }
+      } catch (error) {
+        console.error('Erro específico ao criar sala:', error);
+        UI.showToast('Falha ao criar sala. Tente novamente.', 'error');
       }
     } catch (error) {
       console.error('Erro ao criar sala:', error);

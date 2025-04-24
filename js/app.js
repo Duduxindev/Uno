@@ -200,6 +200,7 @@ function setupNavigation() {
       if (auth.currentUser) {
         // Usuário já logado, ir para as salas
         try {
+          // CORREÇÃO: Usar window.location.href em vez de window.location para confiabilidade
           window.location.href = 'lobby.html';
         } catch (error) {
           console.error('Erro ao redirecionar:', error);

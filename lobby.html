@@ -54,7 +54,8 @@
                     <div id="lobby-room-code-display" class="room-code">
                         <span>Código: </span>
                         <strong id="lobby-room-code">ABC123</strong>
-                        <button id="lobby-copy-code" class="btn-icon"><i class="fas fa-copy"></i></button>
+                        <button id="lobby-copy-code" class="btn-icon" title="Copiar código"><i class="fas fa-copy"></i></button>
+                        <button id="lobby-invite-link" class="btn-icon" title="Copiar link de convite"><i class="fas fa-link"></i></button>
                     </div>
                     <div class="room-status">
                         <span>Status: </span>
@@ -230,5 +231,52 @@
     <script src="js/room.js"></script>
     <script src="js/chat.js"></script>
     <script src="js/lobby-controller.js"></script>
+
+    <!-- Script de recuperação para problemas de redirecionamento -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Verificar se há algum roomId pendente no localStorage
+      const pendingRoomId = localStorage.getItem('pendingRoomId');
+      if (pendingRoomId) {
+        console.log("Recuperando entrada em sala pendente:", pendingRoomId);
+        // Limpar o pendingRoomId
+        localStorage.removeItem('pendingRoomId');
+        
+        // Verificar se já não há um roomId na URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlRoomId = urlParams.get('roomId');
+        
+        if (!urlRoomId) {
+          // Redirecionar para a mesma página com o roomId na URL
+          setTimeout(function() {
+            window.location.href = `lobby.html?roomId=${pendingRoomId}`;
+          }, 500);
+        }
+      }
+
+      // Verificar se a página está recarregando constantemente
+      const reloadCount = parseInt(localStorage.getItem('reloadCount') || '0');
+      if (reloadCount > 3) {
+        // Limpar qualquer estado que possa estar causando um loop
+        localStorage.removeItem('pendingRoomId');
+        localStorage.setItem('reloadCount', '0');
+        
+        // Mostrar mensagem de erro
+        if (typeof UI !== 'undefined' && UI.showToast) {
+          UI.showToast('Ocorreram problemas de carregamento. Voltando para o menu principal...', 'error');
+        }
+        
+        // Voltar para o menu principal
+        setTimeout(function() {
+          window.location.href = 'index.html';
+        }, 2000);
+      } else {
+        localStorage.setItem('reloadCount', (reloadCount + 1).toString());
+        setTimeout(function() {
+          localStorage.removeItem('reloadCount');
+        }, 5000);
+      }
+    });
+    </script>
 </body>
 </html>
