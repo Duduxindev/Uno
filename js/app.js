@@ -23,6 +23,8 @@ function setupAuth() {
   const registerForm = document.getElementById('register-form');
   const googleLoginBtn = document.getElementById('google-login');
   
+  if (!loginForm || !registerForm) return;
+  
   // Login com email/senha
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -77,61 +79,149 @@ function setupAuth() {
   });
   
   // Login com Google
-  googleLoginBtn.addEventListener('click', async () => {
-    try {
-      const result = await auth.signInWithPopup(googleProvider);
-      const user = result.user;
-      
-      // Verificar se o usuário já tem um avatar
-      if (!localStorage.getItem('avatar')) {
-        const avatarSeed = Math.random().toString(36).substring(2, 10);
-        localStorage.setItem('avatar', avatarSeed);
+  if (googleLoginBtn) {
+    googleLoginBtn.addEventListener('click', async () => {
+      try {
+        const result = await auth.signInWithPopup(googleProvider);
+        const user = result.user;
+        
+        // Verificar se o usuário já tem um avatar
+        if (!localStorage.getItem('avatar')) {
+          const avatarSeed = Math.random().toString(36).substring(2, 10);
+          localStorage.setItem('avatar', avatarSeed);
+        }
+        
+        UI.showToast(`Bem-vindo, ${user.displayName}!`, 'success');
+        UI.showSection('main-menu');
+      } catch (error) {
+        console.error('Erro ao fazer login com Google:', error);
+        UI.showToast('Erro ao fazer login com Google: ' + error.message, 'error');
       }
-      
-      UI.showToast(`Bem-vindo, ${user.displayName}!`, 'success');
-      UI.showSection('main-menu');
-    } catch (error) {
-      console.error('Erro ao fazer login com Google:', error);
-      UI.showToast('Erro ao fazer login com Google: ' + error.message, 'error');
-    }
-  });
+    });
+  }
   
   // Verificar estado de autenticação
   auth.onAuthStateChanged((user) => {
+    const btnPlay = document.getElementById('btn-play');
+    const btnLogout = document.getElementById('btn-logout');
+    const userInfo = document.getElementById('user-info');
+    
     if (user) {
       // Usuário já logado
-      document.getElementById('btn-play').textContent = 'Jogar';
+      if (btnPlay) {
+        btnPlay.textContent = 'Jogar';
+      }
+      
+      // Mostrar informações do usuário e botão de logout
+      if (btnLogout) {
+        btnLogout.classList.remove('hidden');
+      }
+      
+      if (userInfo) {
+        userInfo.classList.remove('hidden');
+        
+        // Atualizar avatar
+        const userAvatar = document.getElementById('header-user-avatar');
+        if (userAvatar) {
+          const avatarURL = localStorage.getItem('avatarURL');
+          const avatarSeed = localStorage.getItem('avatar') || user.uid;
+          
+          if (avatarURL) {
+            userAvatar.src = avatarURL;
+          } else {
+            userAvatar.src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${avatarSeed}`;
+          }
+        }
+        
+        // Atualizar nome de usuário
+        const userName = document.getElementById('header-user-name');
+        if (userName) {
+          userName.textContent = user.displayName || 'Jogador';
+        }
+      }
     } else {
       // Usuário não logado
-      document.getElementById('btn-play').textContent = 'Entrar';
+      if (btnPlay) {
+        btnPlay.textContent = 'Entrar';
+      }
+      
+      // Esconder informações do usuário e botão de logout
+      if (btnLogout) {
+        btnLogout.classList.add('hidden');
+      }
+      
+      if (userInfo) {
+        userInfo.classList.add('hidden');
+      }
     }
   });
+  
+  // Logout
+  const btnLogout = document.getElementById('btn-logout');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', async () => {
+      try {
+        await auth.signOut();
+        UI.showToast('Logout realizado com sucesso!', 'success');
+        
+        // Redirecionar para a página inicial se estiver em outra página
+        if (!window.location.pathname.includes('index.html') && !window.location.pathname.endsWith('/')) {
+          window.location.href = 'index.html';
+        } else {
+          UI.showSection('main-menu');
+        }
+      } catch (error) {
+        console.error('Erro ao fazer logout:', error);
+        UI.showToast('Erro ao fazer logout: ' + error.message, 'error');
+      }
+    });
+  }
 }
 
 // Configurar navegação
 function setupNavigation() {
   // Botão para jogar/entrar
-  document.getElementById('btn-play').addEventListener('click', () => {
-    if (auth.currentUser) {
-      // Usuário já logado, ir para as salas
-      UI.showSection('rooms-section');
-      Lobby.init();
-    } else {
-      // Usuário não logado, ir para a autenticação
-      UI.showSection('auth-section');
-    }
-  });
+  const btnPlay = document.getElementById('btn-play');
+  if (btnPlay) {
+    btnPlay.addEventListener('click', () => {
+      if (auth.currentUser) {
+        // Usuário já logado, ir para as salas
+        window.location.href = 'lobby.html';
+      } else {
+        // Usuário não logado, ir para a autenticação
+        UI.showSection('auth-section');
+      }
+    });
+  }
   
   // Botão para ir para as salas
-  document.getElementById('btn-rooms').addEventListener('click', () => {
-    if (auth.currentUser) {
-      UI.showSection('rooms-section');
-      Lobby.init();
-    } else {
-      UI.showSection('auth-section');
-      UI.showToast('Você precisa entrar para acessar as salas!', 'info');
-    }
-  });
+  const btnRooms = document.getElementById('btn-rooms');
+  if (btnRooms) {
+    btnRooms.addEventListener('click', () => {
+      if (auth.currentUser) {
+        window.location.href = 'lobby.html';
+      } else {
+        UI.showSection('auth-section');
+        UI.showToast('Você precisa entrar para acessar as salas!', 'info');
+      }
+    });
+  }
+  
+  // Botão para mostrar regras
+  const btnRules = document.getElementById('btn-rules');
+  if (btnRules) {
+    btnRules.addEventListener('click', () => {
+      UI.showModal(UI.elements.rulesModal);
+    });
+  }
+  
+  // Botão para configurações
+  const btnSettings = document.getElementById('btn-settings');
+  if (btnSettings) {
+    btnSettings.addEventListener('click', () => {
+      UI.showModal(UI.elements.settingsModal);
+    });
+  }
   
   // Formulário de configurações
   const settingsForm = document.getElementById('settings-form');
@@ -161,26 +251,60 @@ function setupNavigation() {
       
       UI.closeModal(UI.elements.settingsModal);
       UI.showToast('Configurações salvas com sucesso!', 'success');
+      
+      // Atualizar o header se estiver presente
+      const headerUserName = document.getElementById('header-user-name');
+      if (headerUserName && auth.currentUser) {
+        headerUserName.textContent = auth.currentUser.displayName || 'Jogador';
+      }
+      
+      // Atualizar avatar no header se estiver presente
+      updateUserAvatar();
     });
   }
   
   // Preencher configurações ao abrir o modal
-  document.getElementById('btn-settings').addEventListener('click', () => {
-    if (auth.currentUser) {
-      document.getElementById('username').value = auth.currentUser.displayName || '';
-    }
-    
+  if (btnSettings) {
+    btnSettings.addEventListener('click', () => {
+      if (auth.currentUser) {
+        document.getElementById('username').value = auth.currentUser.displayName || '';
+      }
+      
+      const avatarURL = localStorage.getItem('avatarURL');
+      const avatarSeed = localStorage.getItem('avatar') || 'default';
+      
+      if (avatarURL) {
+        document.getElementById('current-avatar').src = avatarURL;
+      } else {
+        document.getElementById('current-avatar').src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${avatarSeed}`;
+      }
+      
+      document.getElementById('sound-enabled').checked = localStorage.getItem('soundEnabled') !== 'false';
+      document.getElementById('music-enabled').checked = localStorage.getItem('musicEnabled') !== 'false';
+      document.getElementById('volume').value = localStorage.getItem('volume') || 50;
+    });
+  }
+  
+  // Visualização da skin do jogador ao clicar no avatar
+  const headerUserAvatar = document.getElementById('header-user-avatar');
+  if (headerUserAvatar) {
+    headerUserAvatar.addEventListener('click', () => {
+      UI.showModal(document.getElementById('avatar-preview-modal'));
+    });
+  }
+}
+
+// Função para atualizar o avatar do usuário no header
+function updateUserAvatar() {
+  const headerUserAvatar = document.getElementById('header-user-avatar');
+  if (headerUserAvatar && auth.currentUser) {
     const avatarURL = localStorage.getItem('avatarURL');
-    const avatarSeed = localStorage.getItem('avatar') || 'default';
+    const avatarSeed = localStorage.getItem('avatar') || auth.currentUser.uid;
     
     if (avatarURL) {
-      document.getElementById('current-avatar').src = avatarURL;
+      headerUserAvatar.src = avatarURL;
     } else {
-      document.getElementById('current-avatar').src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${avatarSeed}`;
+      headerUserAvatar.src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${avatarSeed}`;
     }
-    
-    document.getElementById('sound-enabled').checked = localStorage.getItem('soundEnabled') !== 'false';
-    document.getElementById('music-enabled').checked = localStorage.getItem('musicEnabled') !== 'false';
-    document.getElementById('volume').value = localStorage.getItem('volume') || 50;
-  });
+  }
 }

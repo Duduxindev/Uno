@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UNO Online - Lobby | DuduxinDev</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Preloader -->
+    <div id="preloader">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Rooms Section -->
+    <div id="rooms-section" class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Salas de Jogo</h2>
+                <div class="header-actions">
+                    <button id="btn-create-room" class="btn btn-primary"><i class="fas fa-plus"></i> Criar Sala</button>
+                    <button id="btn-refresh-rooms" class="btn"><i class="fas fa-sync-alt"></i></button>
+                    <button id="btn-back-to-menu" class="btn btn-back"><i class="fas fa-arrow-left"></i> Voltar</button>
+                </div>
+            </div>
+
+            <div class="room-types">
+                <button id="tab-public-rooms" class="tab active">Salas Públicas</button>
+                <button id="tab-private-rooms" class="tab">Salas Privadas</button>
+            </div>
+
+            <div class="search-container">
+                <input type="text" id="room-search" placeholder="Procurar sala...">
+                <button id="btn-join-by-code" class="btn">Entrar pelo código</button>
+            </div>
+
+            <div id="rooms-list" class="rooms-list">
+                <!-- Rooms will be populated here -->
+                <div class="no-rooms-message">Nenhuma sala disponível no momento. Crie uma nova sala!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Room Lobby Section -->
+    <div id="room-lobby-section" class="section hidden">
+        <div class="container">
+            <div class="room-lobby-header">
+                <h2 id="lobby-room-title">Nome da Sala</h2>
+                <div class="room-info">
+                    <div id="lobby-room-code-display" class="room-code">
+                        <span>Código: </span>
+                        <strong id="lobby-room-code">ABC123</strong>
+                        <button id="lobby-copy-code" class="btn-icon"><i class="fas fa-copy"></i></button>
+                    </div>
+                    <div class="room-status">
+                        <span>Status: </span>
+                        <strong id="lobby-room-status">Aguardando</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lobby-container">
+                <div class="lobby-players-section">
+                    <h3>Jogadores (<span id="lobby-players-count">1</span>/<span id="lobby-max-players">4</span>)</h3>
+                    
+                    <div id="lobby-players-list" class="player-previews">
+                        <!-- Players will be populated here -->
+                    </div>
+                    
+                    <div class="lobby-actions">
+                        <button id="lobby-btn-start-game" class="btn btn-primary hidden"><i class="fas fa-play"></i> Iniciar Jogo</button>
+                        <button id="lobby-btn-leave-room" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Sair da Sala</button>
+                    </div>
+                </div>
+                
+                <div class="lobby-chat-section">
+                    <div class="chat-container full-height">
+                        <div class="chat-header">
+                            <h3><i class="fas fa-comment-dots"></i> Chat da Sala</h3>
+                        </div>
+                        <div class="chat-messages" id="lobby-chat-messages">
+                            <!-- Chat messages will be populated here -->
+                        </div>
+                        <div class="chat-input-container">
+                            <input type="text" id="lobby-chat-input" placeholder="Digite sua mensagem...">
+                            <button id="lobby-send-message" class="btn-icon"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Room Modal -->
+    <div id="create-room-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Criar Nova Sala</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="create-room-form">
+                    <div class="form-group">
+                        <label for="room-name">Nome da sala</label>
+                        <input type="text" id="room-name" placeholder="Nome da sua sala" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="room-capacity">Jogadores máximos</label>
+                        <select id="room-capacity" required>
+                            <option value="2">2 Jogadores</option>
+                            <option value="3">3 Jogadores</option>
+                            <option value="4" selected>4 Jogadores</option>
+                            <option value="5">5 Jogadores</option>
+                            <option value="6">6 Jogadores</option>
+                            <option value="7">7 Jogadores</option>
+                            <option value="8">8 Jogadores</option>
+                            <option value="9">9 Jogadores</option>
+                            <option value="10">10 Jogadores</option>
+                        </select>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="room-is-private">
+                        <label for="room-is-private">Sala privada</label>
+                    </div>
+                    <div id="private-code-container" class="form-group hidden">
+                        <label for="room-code">Código da sala</label>
+                        <div class="code-container">
+                            <input type="text" id="room-code" readonly>
+                            <button id="generate-code" type="button"><i class="fas fa-sync-alt"></i></button>
+                            <button id="copy-code" type="button"><i class="fas fa-copy"></i></button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Modo de jogo</label>
+                        <div class="mode-selection">
+                            <div class="game-mode">
+                                <input type="radio" id="classic-mode" name="game-mode" value="classic" checked>
+                                <label for="classic-mode">
+                                    <div class="mode-icon"><i class="fas fa-star"></i></div>
+                                    <span>Clássico</span>
+                                </label>
+                            </div>
+                            <div class="game-mode">
+                                <input type="radio" id="custom-mode" name="game-mode" value="custom">
+                                <label for="custom-mode">
+                                    <div class="mode-icon"><i class="fas fa-sliders-h"></i></div>
+                                    <span>Personalizado</span>
+                                </label>
+                            </div>
+                            <div class="game-mode">
+                                <input type="radio" id="nomercy-mode" name="game-mode" value="nomercy">
+                                <label for="nomercy-mode">
+                                    <div class="mode-icon"><i class="fas fa-skull"></i></div>
+                                    <span>No Mercy</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="custom-rules" class="custom-rules hidden">
+                        <h3>Regras personalizadas</h3>
+                        <div class="form-group checkbox-group">
+                            <input type="checkbox" id="rule-stack-draw2" checked>
+                            <label for="rule-stack-draw2">Empilhar cartas +2</label>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <input type="checkbox" id="rule-stack-draw4" checked>
+                            <label for="rule-stack-draw4">Empilhar cartas +4</label>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <input type="checkbox" id="rule-force-play">
+                            <label for="rule-force-play">Obrigar a jogar cartas válidas</label>
+                        </div>
+                        <div class="form-group checkbox-group">
+                            <input type="checkbox" id="rule-special99">
+                            <label for="rule-special99">Chance rara de carta +99 (1%)</label>
+                        </div>
+                    </div>
+                    <div id="nomercy-rules" class="custom-rules hidden">
+                        <h3>Regras No Mercy</h3>
+                        <p class="warning-text">Atenção: No modo No Mercy, todas as regras são implantadas para maximizar a competição!</p>
+                        <ul class="nomercy-rules-list">
+                            <li>Empilhamento ilimitado de cartas +2 e +4</li>
+                            <li>Chance aumentada de carta +99 (5%)</li>
+                            <li>Sem perdão para quem esquece de gritar UNO</li>
+                            <li>Jogadores devem sempre jogar uma carta válida se possuírem</li>
+                        </ul>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Criar Sala</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Join Private Room Modal -->
+    <div id="join-private-room-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Entrar em Sala Privada</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="join-private-room-form">
+                    <div class="form-group">
+                        <label for="private-room-code">Código da sala</label>
+                        <input type="text" id="private-room-code" placeholder="Digite o código da sala" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Entrar na Sala</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    
+    <!-- Game Scripts -->
+    <script src="js/firebase.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/lobby.js"></script>
+    <script src="js/room.js"></script>
+    <script src="js/chat.js"></script>
+    <script src="js/lobby-controller.js"></script>
+</body>
+</html>
