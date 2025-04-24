@@ -24,7 +24,7 @@ const Lobby = {
     
     // Botão para voltar ao menu
     document.getElementById('btn-back-to-menu').addEventListener('click', () => {
-      UI.showSection('main-menu');
+      window.location.href = 'index.html';
     });
     
     // Formulário para criar sala
@@ -242,10 +242,14 @@ const Lobby = {
         return;
       }
       
-      // Inicializar a sala - agora vai direto para a tela da sala
-      await Room.initRoom(roomId);
-      
-      UI.showToast('Entrando na sala...', 'success');
+      // Se estamos na página de lobby, mostrar a seção de sala
+      if (window.location.pathname.includes('lobby.html')) {
+        await Room.initRoom(roomId);
+        UI.showToast('Entrando na sala...', 'success');
+      } else {
+        // Se não, redirecionar para a página de lobby com o ID da sala
+        window.location.href = `lobby.html?roomId=${roomId}`;
+      }
     } catch (error) {
       console.error('Erro ao entrar na sala:', error);
       UI.showToast('Erro ao entrar na sala: ' + error.message, 'error');
@@ -302,10 +306,8 @@ const Lobby = {
       // Fechar modal
       UI.closeModal(UI.elements.joinPrivateRoomModal);
       
-      // Entrar na sala - vai direto para a tela da sala
-      await Room.initRoom(room.id);
-      
-      UI.showToast('Entrando na sala...', 'success');
+      // Entrar na sala
+      this.joinRoom(room.id);
     } catch (error) {
       console.error('Erro ao entrar na sala privada:', error);
       UI.showToast('Erro ao entrar na sala: ' + error.message, 'error');
@@ -352,18 +354,21 @@ const Lobby = {
         special99
       };
       
-            const roomId = await Room.createRoom(roomData);
-                  
-                        if (roomId) {
-                                // Fechar modal
-                                        UI.closeModal(UI.elements.createRoomModal);
-                                                
-                                                        // Limpar formulário
-                                                                document.getElementById('create-room-form').reset();
-                                                                      }
-                                                                          } catch (error) {
-                                                                                console.error('Erro ao criar sala:', error);
-                                                                                      UI.showToast('Erro ao criar sala: ' + error.message, 'error');
-                                                                                          }
-                                                                                            }
-                                                                                            };
+      const roomId = await Room.createRoom(roomData);
+      
+      if (roomId) {
+        // Fechar modal
+        UI.closeModal(UI.elements.createRoomModal);
+        
+        // Limpar formulário
+        document.getElementById('create-room-form').reset();
+        
+        // Ir para a sala
+        await this.joinRoom(roomId);
+      }
+    } catch (error) {
+      console.error('Erro ao criar sala:', error);
+      UI.showToast('Erro ao criar sala: ' + error.message, 'error');
+    }
+  }
+};

@@ -20,7 +20,7 @@ const Room = {
     
     if (!room) {
       UI.showToast('Sala não encontrada!', 'error');
-      UI.showSection('main-menu');
+      window.location.href = 'lobby.html';
       return;
     }
     
@@ -29,9 +29,6 @@ const Room = {
     
     // Entrar na sala
     await this.joinRoom();
-    
-    // Inicializar o jogo
-    Game.initGame(roomId, this.isHost);
     
     // Inicializar o chat
     Chat.initChat(roomId);
@@ -43,8 +40,15 @@ const Room = {
     // Configurar event listeners
     this.setupRoomEventListeners();
     
-    // Mostrar a seção do jogo
-    UI.showSection('game-room-section');
+    // Mostrar a seção do jogo ou a seção da sala
+    if (window.location.pathname.includes('game.html')) {
+      // Estamos na página do jogo, inicializar o jogo
+      Game.initGame(roomId, this.isHost);
+    } else if (window.location.pathname.includes('lobby.html')) {
+      // Estamos na página do lobby, mostrar a seção da sala
+      UI.showSection('room-lobby-section');
+      this.updateLobbyInfo();
+    }
   },
 
   // Criar uma nova sala
@@ -86,9 +90,6 @@ const Room = {
       
       // Salvar a sala no Firebase
       await roomRef.set(roomInfo);
-      
-      // Inicializar a sala - vai direto para a tela da sala
-      this.initRoom(roomId);
       
       UI.showToast('Sala criada com sucesso!', 'success');
       
@@ -158,6 +159,12 @@ const Room = {
       // Atualizar status de presença
       this.updatePresence();
       
+      // Se estiver na página de lobby, mostrar a seção de sala
+      if (window.location.pathname.includes('lobby.html')) {
+        UI.showSection('room-lobby-section');
+        this.updateLobbyInfo();
+      }
+      
       return true;
     } catch (error) {
       console.error('Erro ao entrar na sala:', error);
@@ -206,7 +213,9 @@ const Room = {
       this.isHost = false;
       
       // Limpar listeners do jogo
-      Game.cleanup();
+      if (typeof Game !== 'undefined') {
+        Game.cleanup();
+      }
       
       // Limpar listeners do chat
       Chat.cleanup();
@@ -240,103 +249,188 @@ const Room = {
 
   // Atualizar informações da sala
   updateRoomInfo(room) {
-    // Atualizar título da sala
-    document.getElementById('room-title').textContent = room.name;
-    
-    // Adicionar informações do modo de jogo
-    let modeText = "";
-    if (room.gameMode === 'classic') {
-      modeText = "Modo Clássico";
-    } else if (room.gameMode === 'nomercy') {
-      modeText = "Modo No Mercy";
-    } else {
-      modeText = "Modo Personalizado";
-    }
-    
-    // Adicionar modo ao título se não existir
-    const modeInfo = document.querySelector('.room-mode-info');
-    if (modeInfo) {
-      modeInfo.textContent = ` (${modeText})`;
-    } else {
-      const titleEl = document.getElementById('room-title');
-      const modeSpan = document.createElement('span');
-      modeSpan.className = 'room-mode-info';
-      modeSpan.textContent = ` (${modeText})`;
-      titleEl.appendChild(modeSpan);
-    }
-    
-    // Atualizar código da sala se for privada
-    const roomCodeDisplay = document.getElementById('room-code-display');
-    const roomCodeText = document.getElementById('room-code-text');
-    
-    if (room.isPrivate && room.code) {
-      roomCodeDisplay.classList.remove('hidden');
-      roomCodeText.textContent = room.code;
-    } else {
-      roomCodeDisplay.classList.add('hidden');
-    }
-    
-    // Mostrar botões de iniciar/encerrar jogo apenas para o host
-    const btnStartGame = document.getElementById('btn-start-game');
-    const btnEndGame = document.getElementById('btn-end-game');
-    
-    if (this.isHost) {
-      btnStartGame.classList.remove('hidden');
-      btnEndGame.classList.remove('hidden');
+    // Verificar se estamos na página do jogo
+    if (window.location.pathname.includes('game.html')) {
+      // Atualizar título e código da sala
+      document.getElementById('room-title').textContent = room.name;
       
-      // Desabilitar se não há jogadores suficientes
-      const playersCount = room.players ? Object.keys(room.players).length : 0;
-      btnStartGame.disabled = playersCount < 2;
-    } else {
-      btnStartGame.classList.add('hidden');
-      btnEndGame.classList.add('hidden');
+      const roomCodeDisplay = document.getElementById('room-code-display');
+      const roomCodeText = document.getElementById('room-code-text');
+      
+      if (room.isPrivate && room.code) {
+        roomCodeDisplay.classList.remove('hidden');
+        roomCodeText.textContent = room.code;
+      } else {
+        roomCodeDisplay.classList.add('hidden');
+      }
+      
+      // Adicionar informações do modo de jogo
+      let modeText = "";
+      if (room.gameMode === 'classic') {
+        modeText = "Modo Clássico";
+      } else if (room.gameMode === 'nomercy') {
+        modeText = "Modo No Mercy";
+      } else {
+        modeText = "Modo Personalizado";
+      }
+      
+      // Adicionar modo ao título se não existir
+      const modeInfo = document.querySelector('.room-mode-info');
+      if (modeInfo) {
+        modeInfo.textContent = ` (${modeText})`;
+      } else {
+        const titleEl = document.getElementById('room-title');
+        const modeSpan = document.createElement('span');
+        modeSpan.className = 'room-mode-info';
+        modeSpan.textContent = ` (${modeText})`;
+        titleEl.appendChild(modeSpan);
+      }
+      
+      // Mostrar botões de iniciar/encerrar jogo apenas para o host
+      const btnStartGame = document.getElementById('btn-start-game');
+      const btnEndGame = document.getElementById('btn-end-game');
+      
+      if (this.isHost) {
+        btnStartGame.classList.remove('hidden');
+        btnEndGame.classList.remove('hidden');
+        
+        // Desabilitar se não há jogadores suficientes
+        const playersCount = room.players ? Object.keys(room.players).length : 0;
+        btnStartGame.disabled = playersCount < 2;
+      } else {
+        btnStartGame.classList.add('hidden');
+        btnEndGame.classList.add('hidden');
+      }
     }
   },
 
-  // Renderizar lista de jogadores na sala
+  // Atualizar informações do lobby
+  updateLobbyInfo() {
+    // Verificar se estamos na página de lobby
+    const lobbyRoomTitle = document.getElementById('lobby-room-title');
+    if (!lobbyRoomTitle) return;
+    
+    this.roomRef.once('value', snapshot => {
+      const room = snapshot.val();
+      if (!room) return;
+      
+      // Atualizar título e código
+      lobbyRoomTitle.textContent = room.name;
+      
+      const lobbyRoomCode = document.getElementById('lobby-room-code');
+      const lobbyRoomCodeDisplay = document.getElementById('lobby-room-code-display');
+      
+      if (room.isPrivate && room.code) {
+        lobbyRoomCodeDisplay.classList.remove('hidden');
+        lobbyRoomCode.textContent = room.code;
+      } else {
+        lobbyRoomCodeDisplay.classList.add('hidden');
+      }
+      
+      // Atualizar contagem de jogadores
+      const playersCount = room.players ? Object.keys(room.players).length : 0;
+      document.getElementById('lobby-players-count').textContent = playersCount;
+      document.getElementById('lobby-max-players').textContent = room.maxPlayers;
+      
+      // Atualizar status
+      document.getElementById('lobby-room-status').textContent = 
+          room.status === 'playing' ? 'Em jogo' : 'Aguardando';
+      
+      // Mostrar botão de iniciar para o host
+      const startButton = document.getElementById('lobby-btn-start-game');
+      if (this.isHost) {
+        startButton.classList.remove('hidden');
+        startButton.disabled = playersCount < 2;
+      } else {
+        startButton.classList.add('hidden');
+      }
+      
+      // Renderizar jogadores
+      this.renderLobbyPlayers(room);
+    });
+  },
+
+  // Renderizar lista de jogadores na sala (para página do jogo)
   renderPlayers(room) {
     if (!room || !room.players) return;
     
-    const players = Object.values(room.players);
-    const playersContainer = document.querySelector('.players-container');
+    // Verificar se estamos na página do jogo
+    if (window.location.pathname.includes('game.html')) {
+      const playersContainer = document.querySelector('.players-container');
+      if (!playersContainer) return;
+      
+      // Limpar container
+      playersContainer.innerHTML = '';
+      
+      // Título
+      const title = document.createElement('h3');
+      title.textContent = 'Jogadores';
+      playersContainer.appendChild(title);
+      
+      // Lista de jogadores
+      const playersList = document.createElement('div');
+      playersList.className = 'players-list';
+      
+      // Adicionar cada jogador
+      Object.values(room.players).forEach(player => {
+        const playerItem = document.createElement('div');
+        playerItem.className = 'player-item';
+        
+        let avatarSrc;
+        if (player.avatar) {
+          avatarSrc = player.avatar;
+        } else {
+          const seed = player.avatarSeed || player.id;
+          avatarSrc = `https://api.dicebear.com/6.x/avataaars/svg?seed=${seed}`;
+        }
+        
+        playerItem.innerHTML = `
+          <div class="player-avatar">
+            <img src="${avatarSrc}" alt="${player.name}">
+          </div>
+          <div class="player-info">
+            <div class="player-name">${player.name} ${player.id === auth.currentUser.uid ? '(Você)' : ''}</div>
+            <div class="player-cards-count">Cartas: ${player.cards ? player.cards.length : 0}</div>
+          </div>
+          ${player.isHost ? '<span class="player-host-badge">Host</span>' : ''}
+        `;
+        
+        playersList.appendChild(playerItem);
+      });
+      
+      playersContainer.appendChild(playersList);
+    }
+  },
+
+  // Renderizar jogadores no lobby
+  renderLobbyPlayers(room) {
+    const playersListElement = document.getElementById('lobby-players-list');
+    if (!playersListElement) return;
     
-    // Limpar container
-    playersContainer.innerHTML = '';
+    playersListElement.innerHTML = '';
     
-    // Título
-    const title = document.createElement('h3');
-    title.textContent = 'Jogadores';
-    playersContainer.appendChild(title);
+    if (!room.players) return;
     
-    // Container para previews de jogadores
-    const previewsContainer = document.createElement('div');
-    previewsContainer.className = 'player-previews';
-    
-    // Adicionar cada jogador
-    players.forEach(player => {
-      const playerPreview = document.createElement('div');
-      playerPreview.className = `player-preview ${player.isHost ? 'host' : ''}`;
+    Object.values(room.players).forEach(player => {
+      const playerElement = document.createElement('div');
+      playerElement.className = `player-preview ${player.isHost ? 'host' : ''}`;
       
       let avatarSrc;
       if (player.avatar) {
-        // Avatar customizado
         avatarSrc = player.avatar;
       } else {
-        // Avatar gerado
         const seed = player.avatarSeed || player.id;
         avatarSrc = `https://api.dicebear.com/6.x/avataaars/svg?seed=${seed}`;
       }
       
-      playerPreview.innerHTML = `
+      playerElement.innerHTML = `
         <img src="${avatarSrc}" alt="${player.name}">
-        <div class="player-name">${player.name}</div>
+        <div class="player-name">${player.name} ${player.id === auth.currentUser.uid ? '(Você)' : ''}</div>
         ${player.isHost ? '<div class="host-badge">Host</div>' : ''}
       `;
       
-      previewsContainer.appendChild(playerPreview);
+      playersListElement.appendChild(playerElement);
     });
-    
-    playersContainer.appendChild(previewsContainer);
   },
 
   // Encerrar jogo (quando ainda não começou)
@@ -379,40 +473,27 @@ const Room = {
 
   // Configurar event listeners da sala
   setupRoomEventListeners() {
-    // Botão para iniciar o jogo
-    document.getElementById('btn-start-game').addEventListener('click', () => {
-      Game.startGame();
-    });
-    
-    // Botão para encerrar o jogo (antes de começar)
-    document.getElementById('btn-end-game').addEventListener('click', async () => {
-      await this.endGame();
-    });
-    
-    // Botão para sair da sala
-    document.getElementById('btn-leave-room').addEventListener('click', async () => {
-      await this.leaveRoom();
-      UI.showSection('main-menu');
-    });
-    
-    // Botão para copiar código da sala
-    document.getElementById('copy-room-code').addEventListener('click', () => {
-      const roomCode = document.getElementById('room-code-text').textContent;
-      UI.copyToClipboard(roomCode);
-      UI.showToast('Código copiado para a área de transferência!', 'success');
-    });
-    
     // Ouvir mudanças na sala
     this.roomRef.on('value', (snapshot) => {
       const room = snapshot.val();
       if (!room) {
         UI.showToast('A sala foi fechada pelo host!', 'error');
-        UI.showSection('main-menu');
+        
+        if (window.location.pathname.includes('game.html')) {
+          window.location.href = 'lobby.html';
+        } else {
+          window.location.href = 'index.html';
+        }
         return;
       }
       
-      this.updateRoomInfo(room);
-      this.renderPlayers(room);
+      // Atualizar informações da sala
+      if (window.location.pathname.includes('game.html')) {
+        this.updateRoomInfo(room);
+        this.renderPlayers(room);
+      } else if (window.location.pathname.includes('lobby.html')) {
+        this.updateLobbyInfo();
+      }
     });
   },
 
