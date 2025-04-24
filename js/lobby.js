@@ -111,8 +111,11 @@ const Lobby = {
       const rooms = [];
       roomsSnapshot.forEach(snapshot => {
         const room = snapshot.val();
-        if (room.isPrivate === isPrivate && room.status !== 'closed') {
-          rooms.push(room);
+        if (room && room.isPrivate === isPrivate && room.status !== 'closed') {
+          rooms.push({
+            ...room,
+            id: snapshot.key
+          });
         }
         return false;
       });
@@ -144,10 +147,14 @@ const Lobby = {
       const canJoin = playersCount < room.maxPlayers && !isPlaying;
       
       let modeLabel = 'Clássico';
+      let modeIcon = '<i class="fas fa-star"></i>';
+      
       if (room.gameMode === 'nomercy') {
         modeLabel = 'No Mercy';
+        modeIcon = '<i class="fas fa-skull"></i>';
       } else if (room.gameMode === 'custom') {
         modeLabel = 'Personalizado';
+        modeIcon = '<i class="fas fa-sliders-h"></i>';
       }
       
       const roomCard = document.createElement('div');
@@ -162,8 +169,12 @@ const Lobby = {
             <i class="fas fa-users"></i> ${playersCount}/${room.maxPlayers} jogadores
           </div>
           <div class="room-card-info-item">
-            <i class="fas fa-gamepad"></i> ${modeLabel}
+            ${modeIcon} ${modeLabel}
           </div>
+          ${room.isPrivate ? 
+            `<div class="room-card-info-item">
+              <i class="fas fa-lock"></i> Sala Privada
+            </div>` : ''}
         </div>
         <div class="room-card-actions">
           <button class="btn btn-primary btn-join-room" data-room-id="${room.id}" ${canJoin ? '' : 'disabled'}>

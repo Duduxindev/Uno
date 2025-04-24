@@ -23,9 +23,18 @@ const Chat = {
 
   // Configurar event listeners do chat
   setupEventListeners() {
-    const chatMessages = document.getElementById('chat-messages');
-    const chatInput = document.getElementById('chat-input');
-    const sendMessage = document.getElementById('send-message');
+    // Verificar se estamos na página do lobby ou do jogo
+    const isLobby = window.location.pathname.includes('lobby.html');
+    
+    const chatMessagesId = isLobby ? 'lobby-chat-messages' : 'chat-messages';
+    const chatInputId = isLobby ? 'lobby-chat-input' : 'chat-input';
+    const sendMessageId = isLobby ? 'lobby-send-message' : 'send-message';
+    
+    const chatMessages = document.getElementById(chatMessagesId);
+    const chatInput = document.getElementById(chatInputId);
+    const sendMessage = document.getElementById(sendMessageId);
+    
+    if (!chatMessages || !chatInput || !sendMessage) return;
     
     // Enviar mensagem ao clicar no botão
     sendMessage.addEventListener('click', () => {
@@ -106,7 +115,12 @@ const Chat = {
 
   // Exibir mensagem na interface
   displayMessage(message) {
-    const chatMessages = document.getElementById('chat-messages');
+    // Verificar se estamos na página do lobby ou do jogo
+    const isLobby = window.location.pathname.includes('lobby.html');
+    const chatMessagesId = isLobby ? 'lobby-chat-messages' : 'chat-messages';
+    
+    const chatMessages = document.getElementById(chatMessagesId);
+    if (!chatMessages) return;
     
     const messageElement = document.createElement('div');
     

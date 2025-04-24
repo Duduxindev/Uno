@@ -20,7 +20,11 @@ const Room = {
     
     if (!room) {
       UI.showToast('Sala não encontrada!', 'error');
-      window.location.href = 'lobby.html';
+      if (window.location.pathname.includes('game.html')) {
+        window.location.href = 'lobby.html';
+      } else {
+        window.location.href = 'index.html';
+      }
       return;
     }
     
@@ -35,7 +39,11 @@ const Room = {
     
     // Atualizar informações da sala
     this.updateRoomInfo(room);
-    this.renderPlayers(room);
+    
+    if (window.location.pathname.includes('game.html')) {
+      // Estamos na página do jogo, renderizar jogadores
+      this.renderPlayers(room);
+    }
     
     // Configurar event listeners
     this.setupRoomEventListeners();
@@ -390,7 +398,7 @@ const Room = {
           </div>
           <div class="player-info">
             <div class="player-name">${player.name} ${player.id === auth.currentUser.uid ? '(Você)' : ''}</div>
-            <div class="player-cards-count">Cartas: ${player.cards ? player.cards.length : 0}</div>
+                        <div class="player-cards-count">Cartas: ${player.cards ? player.cards.length : 0}</div>
           </div>
           ${player.isHost ? '<span class="player-host-badge">Host</span>' : ''}
         `;

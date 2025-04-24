@@ -103,9 +103,15 @@ function setupAuth() {
         const user = result.user;
         
         // Verificar se o usuário já tem um avatar
-        if (!localStorage.getItem('avatar')) {
-          const avatarSeed = Math.random().toString(36).substring(2, 10);
-          localStorage.setItem('avatar', avatarSeed);
+        if (!localStorage.getItem('avatar') && !localStorage.getItem('avatarURL')) {
+          // Se for login pelo Google, usar a foto do perfil como avatar
+          if (user.photoURL) {
+            localStorage.setItem('avatarURL', user.photoURL);
+          } else {
+            // Ou gerar avatar aleatório
+            const avatarSeed = Math.random().toString(36).substring(2, 10);
+            localStorage.setItem('avatar', avatarSeed);
+          }
         }
         
         UI.showToast(`Bem-vindo, ${user.displayName}!`, 'success');
@@ -131,8 +137,9 @@ function updateUserHeader(user) {
     const header = document.createElement('div');
     header.className = 'user-header';
     
-    // Obter avatar do usuário
-    let avatarSrc;
+    // Obter avatar do usuário - CORRIGIDO PARA PERSISTÊNCIA
+    let avatarSrc = '';
+    // Prioridade: 1. avatar URL do localStorage, 2. avatar do localStorage, 3. photoURL do usuário, 4. avatar gerado do uid
     const avatarURL = localStorage.getItem('avatarURL');
     const avatarSeed = localStorage.getItem('avatar');
     
@@ -142,8 +149,13 @@ function updateUserHeader(user) {
       avatarSrc = `https://api.dicebear.com/6.x/avataaars/svg?seed=${avatarSeed}`;
     } else if (user.photoURL) {
       avatarSrc = user.photoURL;
+      // Salvar para manter consistência
+      localStorage.setItem('avatarURL', user.photoURL);
     } else {
-      avatarSrc = `https://api.dicebear.com/6.x/avataaars/svg?seed=${user.uid}`;
+      // Gerar um avatar fixo baseado no UID para evitar mudanças
+      const fixedSeed = user.uid.substring(0, 8);
+      avatarSrc = `https://api.dicebear.com/6.x/avataaars/svg?seed=${fixedSeed}`;
+      localStorage.setItem('avatar', fixedSeed);
     }
     
     header.innerHTML = `
@@ -187,7 +199,12 @@ function setupNavigation() {
     btnPlay.addEventListener('click', () => {
       if (auth.currentUser) {
         // Usuário já logado, ir para as salas
-        window.location.href = 'lobby.html';
+        try {
+          window.location.href = 'lobby.html';
+        } catch (error) {
+          console.error('Erro ao redirecionar:', error);
+          UI.showToast('Erro ao redirecionar para o lobby', 'error');
+        }
       } else {
         // Usuário não logado, ir para a autenticação
         UI.showSection('auth-section');
@@ -200,7 +217,12 @@ function setupNavigation() {
   if (btnRooms) {
     btnRooms.addEventListener('click', () => {
       if (auth.currentUser) {
-        window.location.href = 'lobby.html';
+        try {
+          window.location.href = 'lobby.html';
+        } catch (error) {
+          console.error('Erro ao redirecionar:', error);
+          UI.showToast('Erro ao redirecionar para o lobby', 'error');
+        }
       } else {
         UI.showSection('auth-section');
         UI.showToast('Você precisa entrar para acessar as salas!', 'info');
@@ -246,6 +268,7 @@ function setupNavigation() {
       
       if (avatarSeed) {
         localStorage.setItem('avatar', avatarSeed);
+        localStorage.removeItem('avatarURL'); // Remover URL se existir para usar o seed
       }
       
       // Salvar configurações de áudio
@@ -255,6 +278,9 @@ function setupNavigation() {
       
       UI.closeModal(UI.elements.settingsModal);
       UI.showToast('Configurações salvas com sucesso!', 'success');
+      
+      // Atualizar header com novos dados
+      updateUserHeader(auth.currentUser);
     });
   }
   
