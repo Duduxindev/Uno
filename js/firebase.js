@@ -32,6 +32,9 @@ const FirebaseService = {
         // Gerar código único para a sala
         const roomCode = generateRoomCode();
         
+        // Obter avatar com garantia de valor
+        const avatarUrl = getAvatarUrl(user);
+        
         // Dados da sala
         const room = {
           id: roomCode,
@@ -39,13 +42,13 @@ const FirebaseService = {
           host: {
             id: user.uid,
             name: user.displayName || 'Anônimo',
-            avatar: getAvatarUrl(user)
+            avatar: avatarUrl
           },
           players: {
             [user.uid]: {
               id: user.uid,
               name: user.displayName || 'Anônimo',
-              avatar: getAvatarUrl(user),
+              avatar: avatarUrl,
               isHost: true,
               cards: [],
               cardsCount: 0,
@@ -94,11 +97,14 @@ const FirebaseService = {
           throw new Error('Jogo já em andamento');
         }
         
+        // Obter avatar com garantia de valor
+        const avatarUrl = getAvatarUrl(user);
+        
         // Adicionar jogador à sala
         await database.ref(`rooms/${roomCode}/players/${user.uid}`).set({
           id: user.uid,
           name: user.displayName || 'Anônimo',
-          avatar: getAvatarUrl(user),
+          avatar: avatarUrl, // Agora garantimos que avatarUrl nunca será undefined
           isHost: false,
           cards: [],
           cardsCount: 0,
@@ -568,11 +574,12 @@ function getAvatarUrl(user) {
     return avatarURL;
   } else if (avatarSeed) {
     return `https://api.dicebear.com/6.x/avataaars/svg?seed=${avatarSeed}`;
-  } else if (user.photoURL) {
+  } else if (user && user.photoURL) {
     return user.photoURL;
   } else {
     // Gerar um avatar fixo baseado no UID para evitar mudanças
-    const fixedSeed = user.uid.substring(0, 8);
+    // Garantimos que sempre haja um valor, mesmo se o user.uid for undefined
+    const fixedSeed = user && user.uid ? user.uid.substring(0, 8) : 'default';
     return `https://api.dicebear.com/6.x/avataaars/svg?seed=${fixedSeed}`;
   }
 }
