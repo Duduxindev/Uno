@@ -63,6 +63,23 @@ function setupFormListeners() {
     });
   }
   
+  // Botão de login com Google
+  const googleLoginBtn = document.getElementById('login-google');
+  if (googleLoginBtn) {
+    googleLoginBtn.addEventListener('click', async () => {
+      await loginWithGoogle();
+    });
+  }
+  
+  // Formulário de configurações
+  const settingsForm = document.getElementById('settings-form');
+  if (settingsForm) {
+    settingsForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await updateSettings(settingsForm);
+    });
+  }
+  
   // Botões de menu principal
   setupMainMenuButtons();
 }
@@ -89,6 +106,14 @@ function setupMainMenuButtons() {
   const btnSettings = document.getElementById('btn-settings');
   if (btnSettings) {
     btnSettings.addEventListener('click', () => {
+      // Preencher campos com dados atuais do usuário
+      const user = auth.currentUser;
+      if (user) {
+        const displayNameInput = document.getElementById('display-name');
+        if (displayNameInput) {
+          displayNameInput.value = user.displayName || '';
+        }
+      }
       UI.showModal(document.getElementById('settings-modal'));
     });
   }
@@ -153,8 +178,10 @@ async function handleLogin() {
   } finally {
     // Restaurar botão
     const loginButton = document.querySelector('#login-form button[type="submit"]');
-    loginButton.disabled = false;
-    loginButton.innerHTML = 'Entrar';
+    if (loginButton) {
+      loginButton.disabled = false;
+      loginButton.innerHTML = 'Entrar';
+    }
   }
 }
 
@@ -220,153 +247,168 @@ async function handleRegister() {
     // Mensagens de erro específicas
     let errorMessage = 'Erro ao registrar. Tente novamente.';
     
-    errorMessage = 'Este e-mail já está em uso. Tente outro.';
-  } else if (error.code === 'auth/invalid-email') {
-    errorMessage = 'E-mail inválido. Verifique o formato.';
-  } else if (error.code === 'auth/weak-password') {
-    errorMessage = 'Senha fraca. Use uma senha mais forte.';
+    if (error.code === 'auth/email-already-in-use') {
+      errorMessage = 'Este e-mail já está em uso. Tente outro.';
+    } else if (error.code === 'auth/invalid-email') {
+      errorMessage = 'E-mail inválido. Verifique o formato.';
+    } else if (error.code === 'auth/weak-password') {
+      errorMessage = 'Senha fraca. Use uma senha mais forte.';
+    }
+    
+    UI.showToast(errorMessage, 'error');
+  } finally {
+    // Restaurar botão
+    const registerButton = document.querySelector('#register-form button[type="submit"]');
+    if (registerButton) {
+      registerButton.disabled = false;
+      registerButton.innerHTML = 'Registrar';
+    }
   }
-  
-  UI.showToast(errorMessage, 'error');
-} finally {
-  // Restaurar botão
-  const registerButton = document.querySelector('#register-form button[type="submit"]');
-  registerButton.disabled = false;
-  registerButton.innerHTML = 'Registrar';
 }
-
 
 // Função para lidar com o logout
 async function handleLogout() {
-try {
-  // Mostrar confirmação
-  if (confirm('Tem certeza que deseja sair?')) {
-    await auth.signOut();
-    UI.showToast('Logout realizado com sucesso!', 'success');
-    
-    // Mostrar tela de autenticação
-    UI.showSection('auth-section');
-    UI.showTab('login');
+  try {
+    // Mostrar confirmação
+    if (confirm('Tem certeza que deseja sair?')) {
+      await auth.signOut();
+      UI.showToast('Logout realizado com sucesso!', 'success');
+      
+      // Mostrar tela de autenticação
+      UI.showSection('auth-section');
+      UI.showTab('login');
+    }
+  } catch (error) {
+    console.error('Erro no logout:', error);
+    UI.showToast('Erro ao fazer logout: ' + error.message, 'error');
   }
-} catch (error) {
-  console.error('Erro no logout:', error);
-  UI.showToast('Erro ao fazer logout: ' + error.message, 'error');
-}
 }
 
 // Função para atualizar UI com informações do usuário
 function updateUserUI(user) {
-// Atualizar nome do usuário
-const usernameElements = document.querySelectorAll('.username');
-usernameElements.forEach(element => {
-  element.textContent = user.displayName || 'Jogador';
-});
-
-// Atualizar avatar do usuário
-const userAvatarElements = document.querySelectorAll('.user-avatar');
-userAvatarElements.forEach(element => {
-  // Prioridade: 1. avatarURL do localStorage, 2. avatar semente do localStorage, 3. photoURL do usuário, 4. avatar gerado do uid
-  const avatarURL = localStorage.getItem('avatarURL');
-  const avatarSeed = localStorage.getItem('avatar');
+  if (!user) return;
   
-  if (avatarURL) {
-    element.src = avatarURL;
-  } else if (avatarSeed) {
-    element.src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${avatarSeed}`;
-  } else if (user.photoURL) {
-    element.src = user.photoURL;
-  } else {
-    // Gerar um avatar fixo baseado no UID para evitar mudanças
-    const fixedSeed = user.uid.substring(0, 8);
-    element.src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${fixedSeed}`;
-  }
-});
+  // Atualizar nome do usuário
+  const usernameElements = document.querySelectorAll('.username');
+  usernameElements.forEach(element => {
+    element.textContent = user.displayName || 'Jogador';
+  });
+  
+  // Atualizar avatar do usuário
+  const userAvatarElements = document.querySelectorAll('.user-avatar');
+  userAvatarElements.forEach(element => {
+    // Usar a função getAvatarUrl do Firebase Service para garantir consistência
+    if (typeof getAvatarUrl === 'function') {
+      element.src = getAvatarUrl(user);
+    } else {
+      // Fallback se a função não estiver disponível
+      const avatarURL = localStorage.getItem('avatarURL');
+      const avatarSeed = localStorage.getItem('avatar');
+      
+      if (avatarURL) {
+        element.src = avatarURL;
+      } else if (avatarSeed) {
+        element.src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${avatarSeed}`;
+      } else if (user.photoURL) {
+        element.src = user.photoURL;
+      } else {
+        // Gerar um avatar fixo baseado no UID para evitar mudanças
+        const fixedSeed = user.uid ? user.uid.substring(0, 8) : 'default';
+        element.src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${fixedSeed}`;
+      }
+    }
+  });
 }
 
 // Função para login com Google
 async function loginWithGoogle() {
-try {
-  // Mostrar loading
-  const googleButton = document.getElementById('login-google');
-  if (googleButton) {
-    googleButton.disabled = true;
-    googleButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
+  try {
+    // Mostrar loading
+    const googleButton = document.getElementById('login-google');
+    if (googleButton) {
+      googleButton.disabled = true;
+      googleButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
+    }
+    
+    // Fazer login com Google (usando popup)
+    const result = await auth.signInWithPopup(googleProvider);
+    
+    // Verificar se é a primeira vez que o usuário loga
+    if (result.additionalUserInfo && result.additionalUserInfo.isNewUser) {
+      // Gerar avatar aleatório e salvar
+      const avatarSeed = Math.random().toString(36).substring(2, 10);
+      localStorage.setItem('avatar', avatarSeed);
+    }
+    
+    // Mostrar menu principal
+    UI.showToast('Login realizado com sucesso!', 'success');
+    UI.showSection('main-menu');
+  } catch (error) {
+    console.error('Erro no login com Google:', error);
+    UI.showToast('Erro ao fazer login com Google: ' + error.message, 'error');
+  } finally {
+    // Restaurar botão
+    const googleButton = document.getElementById('login-google');
+    if (googleButton) {
+      googleButton.disabled = false;
+      googleButton.innerHTML = '<i class="fab fa-google"></i> Entrar com Google';
+    }
   }
-  
-  // Fazer login com Google
-  const result = await auth.signInWithPopup(googleProvider);
-  
-  // Verificar se é a primeira vez que o usuário loga
-  const isNewUser = result.additionalUserInfo.isNewUser;
-  
-  if (isNewUser) {
-    // Gerar avatar aleatório e salvar
-    const avatarSeed = Math.random().toString(36).substring(2, 10);
-    localStorage.setItem('avatar', avatarSeed);
-  }
-  
-  // Mostrar menu principal
-  UI.showToast('Login realizado com sucesso!', 'success');
-  UI.showSection('main-menu');
-} catch (error) {
-  console.error('Erro no login com Google:', error);
-  UI.showToast('Erro ao fazer login com Google: ' + error.message, 'error');
-} finally {
-  // Restaurar botão
-  const googleButton = document.getElementById('login-google');
-  if (googleButton) {
-    googleButton.disabled = false;
-    googleButton.innerHTML = '<i class="fab fa-google"></i> Entrar com Google';
-  }
-}
 }
 
 // Função para atualizar configurações
 async function updateSettings(form) {
-try {
-  const user = auth.currentUser;
-  if (!user) {
-    UI.showToast('Você precisa estar logado para atualizar as configurações', 'error');
-    return;
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      UI.showToast('Você precisa estar logado para atualizar as configurações', 'error');
+      return;
+    }
+    
+    // Obter valores do formulário
+    const displayName = form.elements['display-name'].value.trim();
+    const avatarSeed = form.elements['avatar-seed'].value;
+    
+    // Validar campos
+    if (!displayName) {
+      UI.showToast('Digite um nome de exibição', 'warning');
+      return;
+    }
+    
+    // Mostrar loading
+    const submitButton = form.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+    
+    // Atualizar nome de exibição
+    await user.updateProfile({
+      displayName: displayName
+    });
+    
+    // Salvar avatar
+    if (avatarSeed) {
+      localStorage.setItem('avatar', avatarSeed);
+      localStorage.removeItem('avatarURL'); // Remover URL antiga se existir
+    }
+    
+    // Fechar modal e atualizar UI
+    UI.closeModal(document.getElementById('settings-modal'));
+    updateUserUI(user);
+    
+    UI.showToast('Configurações atualizadas com sucesso!', 'success');
+  } catch (error) {
+    console.error('Erro ao atualizar configurações:', error);
+    UI.showToast('Erro ao atualizar configurações: ' + error.message, 'error');
+  } finally {
+    // Restaurar botão
+    const submitButton = form.querySelector('button[type="submit"]');
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.innerHTML = 'Salvar Alterações';
+    }
   }
-  
-  // Obter valores do formulário
-  const displayName = form.elements['display-name'].value.trim();
-  const avatarSeed = form.elements['avatar-seed'].value;
-  
-  // Validar campos
-  if (!displayName) {
-    UI.showToast('Digite um nome de exibição', 'warning');
-    return;
-  }
-  
-  // Mostrar loading
-  const submitButton = form.querySelector('button[type="submit"]');
-  submitButton.disabled = true;
-  submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
-  
-  // Atualizar nome de exibição
-  await user.updateProfile({
-    displayName: displayName
-  });
-  
-  // Salvar avatar
-  if (avatarSeed) {
-    localStorage.setItem('avatar', avatarSeed);
-  }
-  
-  // Fechar modal e atualizar UI
-  UI.closeModal(document.getElementById('settings-modal'));
-  updateUserUI(user);
-  
-  UI.showToast('Configurações atualizadas com sucesso!', 'success');
-} catch (error) {
-  console.error('Erro ao atualizar configurações:', error);
-  UI.showToast('Erro ao atualizar configurações: ' + error.message, 'error');
-} finally {
-  // Restaurar botão
-  const submitButton = form.querySelector('button[type="submit"]');
-  submitButton.disabled = false;
-  submitButton.innerHTML = 'Salvar Alterações';
 }
-}
+
+// Disponibilizar funções globalmente se necessário
+window.loginWithGoogle = loginWithGoogle;
+window.updateSettings = updateSettings;
