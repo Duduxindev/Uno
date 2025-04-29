@@ -1,282 +1,165 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UNO Online - Lobby | DuduxinDev</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UNO Online | Salas</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <!-- Preloader -->
-    <div id="preloader">
-        <div class="spinner"></div>
+  <!-- Preloader -->
+  <div id="preloader">
+    <div class="preloader-content">
+      <div class="preloader-spinner"></div>
     </div>
-
-    <!-- Rooms Section -->
-    <div id="rooms-section" class="section">
-        <div class="container">
-            <div class="section-header">
-                <h2>Salas de Jogo</h2>
-                <div class="header-actions">
-                    <button id="btn-create-room" class="btn btn-primary"><i class="fas fa-plus"></i> Criar Sala</button>
-                    <button id="btn-refresh-rooms" class="btn"><i class="fas fa-sync-alt"></i></button>
-                    <button id="btn-back-to-menu" class="btn btn-back"><i class="fas fa-arrow-left"></i> Voltar</button>
-                </div>
-            </div>
-
-            <div class="room-types">
-                <button id="tab-public-rooms" class="tab active">Salas Públicas</button>
-                <button id="tab-private-rooms" class="tab">Salas Privadas</button>
-            </div>
-
-            <div class="search-container">
-                <input type="text" id="room-search" placeholder="Procurar sala...">
-                <button id="btn-join-by-code" class="btn">Entrar pelo código</button>
-            </div>
-
-            <div id="rooms-list" class="rooms-list">
-                <!-- Rooms will be populated here -->
-                <div class="no-rooms-message">Nenhuma sala disponível no momento. Crie uma nova sala!</div>
-            </div>
+  </div>
+  
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+  
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="preloader-spinner"></div>
+  </div>
+  
+  <!-- Lobby -->
+  <div class="lobby-container">
+    <header class="lobby-header">
+      <div class="lobby-title">
+        <div class="header-logo">
+          <span class="red">U</span>
+          <span class="blue">N</span>
+          <span class="green">O</span>
+          <span class="yellow">!</span>
         </div>
-    </div>
-
-    <!-- Room Lobby Section -->
-    <div id="room-lobby-section" class="section hidden">
-        <div class="container">
-            <div class="room-lobby-header">
-                <h2 id="lobby-room-title">Nome da Sala</h2>
-                <div class="room-info">
-                    <div id="lobby-room-code-display" class="room-code">
-                        <span>Código: </span>
-                        <strong id="lobby-room-code">ABC123</strong>
-                        <button id="lobby-copy-code" class="btn-icon" title="Copiar código"><i class="fas fa-copy"></i></button>
-                        <button id="lobby-invite-link" class="btn-icon" title="Copiar link de convite"><i class="fas fa-link"></i></button>
-                    </div>
-                    <div class="room-status">
-                        <span>Status: </span>
-                        <strong id="lobby-room-status">Aguardando</strong>
-                    </div>
-                </div>
-            </div>
-
-            <div class="lobby-container">
-                <div class="lobby-players-section">
-                    <h3>Jogadores (<span id="lobby-players-count">1</span>/<span id="lobby-max-players">4</span>)</h3>
-                    
-                    <div id="lobby-players-list" class="player-previews">
-                        <!-- Players will be populated here -->
-                    </div>
-                    
-                    <div class="lobby-actions">
-                        <button id="lobby-btn-start-game" class="btn btn-primary hidden"><i class="fas fa-play"></i> Iniciar Jogo</button>
-                        <button id="lobby-btn-leave-room" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Sair da Sala</button>
-                    </div>
-                </div>
-                
-                <div class="lobby-chat-section">
-                    <div class="chat-container full-height">
-                        <div class="chat-header">
-                            <h3><i class="fas fa-comment-dots"></i> Chat da Sala</h3>
-                        </div>
-                        <div class="chat-messages" id="lobby-chat-messages">
-                            <!-- Chat messages will be populated here -->
-                        </div>
-                        <div class="chat-input-container">
-                            <input type="text" id="lobby-chat-input" placeholder="Digite sua mensagem...">
-                            <button id="lobby-send-message" class="btn-icon"><i class="fas fa-paper-plane"></i></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Create Room Modal -->
-    <div id="create-room-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Criar Nova Sala</h2>
-                <span class="close-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <form id="create-room-form">
-                    <div class="form-group">
-                        <label for="room-name">Nome da sala</label>
-                        <input type="text" id="room-name" placeholder="Nome da sua sala" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="room-capacity">Jogadores máximos</label>
-                        <select id="room-capacity" required>
-                            <option value="2">2 Jogadores</option>
-                            <option value="3">3 Jogadores</option>
-                            <option value="4" selected>4 Jogadores</option>
-                            <option value="5">5 Jogadores</option>
-                            <option value="6">6 Jogadores</option>
-                            <option value="7">7 Jogadores</option>
-                            <option value="8">8 Jogadores</option>
-                            <option value="9">9 Jogadores</option>
-                            <option value="10">10 Jogadores</option>
-                        </select>
-                    </div>
-                    <div class="form-group checkbox-group">
-                        <input type="checkbox" id="room-is-private">
-                        <label for="room-is-private">Sala privada</label>
-                    </div>
-                    <div id="private-code-container" class="form-group hidden">
-                        <label for="room-code">Código da sala</label>
-                        <div class="code-container">
-                            <input type="text" id="room-code" readonly>
-                            <button id="generate-code" type="button"><i class="fas fa-sync-alt"></i></button>
-                            <button id="copy-code" type="button"><i class="fas fa-copy"></i></button>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Modo de jogo</label>
-                        <div class="mode-selection">
-                            <div class="game-mode">
-                                <input type="radio" id="classic-mode" name="game-mode" value="classic" checked>
-                                <label for="classic-mode">
-                                    <div class="mode-icon"><i class="fas fa-star"></i></div>
-                                    <span>Clássico</span>
-                                </label>
-                            </div>
-                            <div class="game-mode">
-                                <input type="radio" id="custom-mode" name="game-mode" value="custom">
-                                <label for="custom-mode">
-                                    <div class="mode-icon"><i class="fas fa-sliders-h"></i></div>
-                                    <span>Personalizado</span>
-                                </label>
-                            </div>
-                            <div class="game-mode">
-                                <input type="radio" id="nomercy-mode" name="game-mode" value="nomercy">
-                                <label for="nomercy-mode">
-                                    <div class="mode-icon"><i class="fas fa-skull"></i></div>
-                                    <span>No Mercy</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="custom-rules" class="custom-rules hidden">
-                        <h3>Regras personalizadas</h3>
-                        <div class="form-group checkbox-group">
-                            <input type="checkbox" id="rule-stack-draw2" checked>
-                            <label for="rule-stack-draw2">Empilhar cartas +2</label>
-                        </div>
-                        <div class="form-group checkbox-group">
-                            <input type="checkbox" id="rule-stack-draw4" checked>
-                            <label for="rule-stack-draw4">Empilhar cartas +4</label>
-                        </div>
-                        <div class="form-group checkbox-group">
-                            <input type="checkbox" id="rule-force-play">
-                            <label for="rule-force-play">Obrigar a jogar cartas válidas</label>
-                        </div>
-                        <div class="form-group checkbox-group">
-                            <input type="checkbox" id="rule-special99">
-                            <label for="rule-special99">Chance rara de carta +99 (1%)</label>
-                        </div>
-                    </div>
-                    <div id="nomercy-rules" class="custom-rules hidden">
-                        <h3>Regras No Mercy</h3>
-                        <p class="warning-text">Atenção: No modo No Mercy, todas as regras são implantadas para maximizar a competição!</p>
-                        <ul class="nomercy-rules-list">
-                            <li>Empilhamento ilimitado de cartas +2 e +4</li>
-                            <li>Chance aumentada de carta +99 (5%)</li>
-                            <li>Sem perdão para quem esquece de gritar UNO</li>
-                            <li>Jogadores devem sempre jogar uma carta válida se possuírem</li>
-                        </ul>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Criar Sala</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Join Private Room Modal -->
-    <div id="join-private-room-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Entrar em Sala Privada</h2>
-                <span class="close-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <form id="join-private-room-form">
-                    <div class="form-group">
-                        <label for="private-room-code">Código da sala</label>
-                        <input type="text" id="private-room-code" placeholder="Digite o código da sala" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Entrar na Sala</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toast Notifications -->
-    <div id="toast-container" class="toast-container"></div>
-
-    <!-- Firebase Scripts -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+        <h1>Salas</h1>
+      </div>
+      <div class="user-display">
+        <span id="username">Jogador</span>
+        <img id="user-avatar" src="https://api.dicebear.com/6.x/avataaars/svg?seed=default" alt="Avatar" class="avatar avatar-sm">
+      </div>
+    </header>
     
-    <!-- Game Scripts -->
-    <script src="js/firebase.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/lobby.js"></script>
-    <script src="js/room.js"></script>
-    <script src="js/chat.js"></script>
-    <script src="js/lobby-controller.js"></script>
-
-    <!-- Script de recuperação para problemas de redirecionamento -->
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Verificar se há algum roomId pendente no localStorage
-      const pendingRoomId = localStorage.getItem('pendingRoomId');
-      if (pendingRoomId) {
-        console.log("Recuperando entrada em sala pendente:", pendingRoomId);
-        // Limpar o pendingRoomId
-        localStorage.removeItem('pendingRoomId');
+    <main class="lobby-body">
+      <div class="lobby-actions">
+        <div class="rooms-tabs">
+          <div class="tab room-tab active" data-filter="all">Todas</div>
+          <div class="tab room-tab" data-filter="public">Públicas</div>
+          <div class="tab room-tab" data-filter="private">Privadas</div>
+        </div>
         
-        // Verificar se já não há um roomId na URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlRoomId = urlParams.get('roomId');
+        <div class="rooms-search">
+          <input type="text" id="search-rooms" class="form-control" placeholder="Buscar salas...">
+          <button id="btn-refresh-rooms" class="btn btn-primary btn-icon" title="Atualizar lista">
+            <i class="fas fa-sync-alt"></i>
+          </button>
+          <button id="btn-create-room" class="btn btn-primary" title="Criar nova sala">
+            <i class="fas fa-plus"></i> Criar Sala
+          </button>
+        </div>
+      </div>
+      
+      <section id="rooms-section">
+        <div id="rooms-list" class="rooms-list"></div>
+      </section>
+    </main>
+    
+    <footer class="lobby-footer">
+      <div class="footer-actions">
+        <button id="btn-back" class="btn">
+          <i class="fas fa-arrow-left"></i> Voltar ao Menu
+        </button>
+        <button id="btn-logout" class="btn">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </footer>
+  </div>
+  
+  <!-- Modal de Criar Sala -->
+  <div id="create-room-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Criar Nova Sala</h2>
+        <button class="close-modal">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <form id="create-room-form">
+          <div class="form-group">
+            <label for="room-name" class="form-label">Nome da Sala</label>
+            <input type="text" id="room-name" class="form-control" placeholder="Ex: Sala do Duduxin" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="max-players" class="form-label">Máximo de Jogadores</label>
+            <input type="number" id="max-players" class="form-control" min="2" max="10" value="4" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="game-mode" class="form-label">Modo de Jogo</label>
+            <select id="game-mode" class="form-control" required>
+              <option value="classic">Clássico</option>
+              <option value="special">Especial (+2 em cima de +2, carta rara +99)</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <div class="form-check">
+              <input type="checkbox" id="is-private" class="form-check-input">
+              <label for="is-private" class="form-check-label">Sala Privada (com código)</label>
+            </div>
+          </div>
+          
+          <button type="submit" class="btn btn-primary w-full">Criar Sala</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Modal de Código de Sala -->
+  <div id="room-code-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Digite o Código da Sala</h2>
+        <button class="close-modal">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="room-code-input" class="form-label">Código da Sala</label>
+          <input type="text" id="room-code-input" class="form-control" placeholder="Digite o código de 6 caracteres" maxlength="6" style="text-transform: uppercase;">
+        </div>
         
-        if (!urlRoomId) {
-          // Redirecionar para a mesma página com o roomId na URL
-          setTimeout(function() {
-            window.location.href = `lobby.html?roomId=${pendingRoomId}`;
-          }, 500);
-        }
-      }
-
-      // Verificar se a página está recarregando constantemente
-      const reloadCount = parseInt(localStorage.getItem('reloadCount') || '0');
-      if (reloadCount > 3) {
-        // Limpar qualquer estado que possa estar causando um loop
-        localStorage.removeItem('pendingRoomId');
-        localStorage.setItem('reloadCount', '0');
-        
-        // Mostrar mensagem de erro
-        if (typeof UI !== 'undefined' && UI.showToast) {
-          UI.showToast('Ocorreram problemas de carregamento. Voltando para o menu principal...', 'error');
-        }
-        
-        // Voltar para o menu principal
-        setTimeout(function() {
-          window.location.href = 'index.html';
-        }, 2000);
-      } else {
-        localStorage.setItem('reloadCount', (reloadCount + 1).toString());
-        setTimeout(function() {
-          localStorage.removeItem('reloadCount');
-        }, 5000);
-      }
-    });
-    </script>
+        <button id="submit-room-code" class="btn btn-primary w-full">Entrar na Sala</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Firebase Core -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  
+  <!-- Firebase Products -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+  
+  <!-- App Scripts -->
+  <script src="js/firebase.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/lobby.js"></script>
 </body>
 </html>
