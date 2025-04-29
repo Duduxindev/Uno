@@ -1,324 +1,331 @@
-// Funções de UI e utilidades
+// UI Manager
 const UI = {
-  // Elementos DOM principais
   elements: {
-    preloader: document.getElementById('preloader'),
-    mainMenu: document.getElementById('main-menu'),
-    authSection: document.getElementById('auth-section'),
-    roomsSection: document.getElementById('rooms-section'),
-    gameRoomSection: document.getElementById('game-room-section'),
-    tabLogin: document.getElementById('tab-login'),
-    tabRegister: document.getElementById('tab-register'),
-    loginForm: document.getElementById('login-form'),
-    registerForm: document.getElementById('register-form'),
-    roomsList: document.getElementById('rooms-list'),
-    createRoomModal: document.getElementById('create-room-modal'),
-    joinPrivateRoomModal: document.getElementById('join-private-room-modal'),
-    colorPickerModal: document.getElementById('color-picker-modal'),
-    gameOverModal: document.getElementById('game-over-modal'),
-    rulesModal: document.getElementById('rules-modal'),
-    settingsModal: document.getElementById('settings-modal'),
-    btnPlay: document.getElementById('btn-play'),
-    btnRooms: document.getElementById('btn-rooms'),
-    btnRules: document.getElementById('btn-rules'),
-    btnSettings: document.getElementById('btn-settings'),
-    btnCreateRoom: document.getElementById('btn-create-room'),
-    btnJoinByCode: document.getElementById('btn-join-by-code'),
-    btnStartGame: document.getElementById('btn-start-game'),
-    playerHand: document.getElementById('player-hand'),
-    discardPile: document.getElementById('discard-pile'),
-    drawPile: document.getElementById('draw-pile'),
-    gameStatus: document.getElementById('game-status'),
-    gameBoard: document.getElementById('game-board'),
-    waitingScreen: document.getElementById('waiting-screen'),
-    playersCount: document.getElementById('players-count'),
-    playersRequired: document.getElementById('players-required'),
-    currentColor: document.getElementById('current-color'),
-    colorIndicator: document.querySelector('.color-indicator'),
-    btnDraw: document.getElementById('btn-draw'),
-    btnPass: document.getElementById('btn-pass'),
-    btnUno: document.getElementById('btn-uno'),
-    toastContainer: document.getElementById('toast-container')
-  },
-
-  // Inicializa a UI
-  init() {
-    this.hidePreloader();
-    this.setupEventListeners();
-  },
-
-  // Esconde o preloader
-  hidePreloader() {
-    // Referência direta para garantir que o elemento seja encontrado
-    const preloader = document.getElementById('preloader');
+    preloader: null,
+    authSection: null,
+    mainMenu: null,
+    rulesModal: null,
+    settingsModal: null,
+    toastContainer: null,
     
-    if (!preloader) return;
+    // Formulários
+    loginForm: null,
+    registerForm: null,
+    settingsForm: null,
     
-    // Remover imediatamente em vez de usar transição
+    // Tabs
+    tabLogin: null,
+    tabRegister: null,
+    
+    // Botões
+    btnPlay: null,
+    btnRooms: null,
+    btnRules: null,
+    btnSettings: null,
+    btnLogout: null,
+    
+    // Campos
+    loginEmail: null,
+    loginPassword: null,
+    registerUsername: null,
+    registerEmail: null,
+    registerPassword: null,
+    registerConfirmPassword: null,
+    
+    // Game
+    gameRoom: null,
+    waitingScreen: null,
+    gameBoard: null,
+    playerHand: null,
+    discardPile: null,
+    drawPile: null,
+    gameStatus: null,
+    
+    // Modals
+    colorPickerModal: null,
+    gameOverModal: null,
+  },
+  
+  init: function() {
+    // Inicializar elementos
+    this.initElements();
+    
+    // Aplicar event listeners
+    this.initEventListeners();
+    
+    // Verificar página atual
+    this.setupCurrentPage();
+    
+    // Remover preloader
     setTimeout(() => {
-      preloader.style.opacity = '0';
-      preloader.style.visibility = 'hidden';  // Adiciona visibilidade oculta
-      
-      // Adiciona classe hidden após a transição de opacidade
-      setTimeout(() => {
-        preloader.classList.add('hidden');
-      }, 300);
-    }, 800); // Reduzido de 1500ms para 800ms
+      if (this.elements.preloader) {
+        this.elements.preloader.classList.add('hidden');
+      }
+    }, 1000);
   },
-
-  // Configurar os listeners de eventos da UI
-  setupEventListeners() {
-    // Tabs de autenticação
-    if (this.elements.tabLogin && this.elements.tabRegister) {
-      this.elements.tabLogin.addEventListener('click', () => this.switchAuthTab('login'));
-      this.elements.tabRegister.addEventListener('click', () => this.switchAuthTab('register'));
+  
+  initElements: function() {
+    // Elementos comuns
+    this.elements.preloader = document.getElementById('preloader');
+    this.elements.toastContainer = document.getElementById('toast-container');
+    
+    // Elementos de página específica
+    if (document.getElementById('main-menu')) {
+      this.setupHomePage();
+    } else if (document.getElementById('rooms-section')) {
+      this.setupLobbyPage();
+    } else if (document.getElementById('game-room-section')) {
+      this.setupGamePage();
     }
-
-    // Fechar modais
-    document.querySelectorAll('.close-modal').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        this.closeModal(e.target.closest('.modal'));
-      });
-    });
-
-    // Clicar fora do modal para fechar
-    document.querySelectorAll('.modal').forEach(modal => {
-      modal.addEventListener('click', (e) => {
+  },
+  
+  setupHomePage: function() {
+    // Seções
+    this.elements.mainMenu = document.getElementById('main-menu');
+    this.elements.authSection = document.getElementById('auth-section');
+    
+    // Modais
+    this.elements.rulesModal = document.getElementById('rules-modal');
+    this.elements.settingsModal = document.getElementById('settings-modal');
+    
+    // Formulários
+    this.elements.loginForm = document.getElementById('login-form');
+    this.elements.registerForm = document.getElementById('register-form');
+    this.elements.settingsForm = document.getElementById('settings-form');
+    
+    // Tabs
+    this.elements.tabLogin = document.getElementById('tab-login');
+    this.elements.tabRegister = document.getElementById('tab-register');
+    
+    // Botões
+    this.elements.btnPlay = document.getElementById('btn-play');
+    this.elements.btnRooms = document.getElementById('btn-rooms');
+    this.elements.btnRules = document.getElementById('btn-rules');
+    this.elements.btnSettings = document.getElementById('btn-settings');
+    
+    // Campos
+    this.elements.loginEmail = document.getElementById('login-email');
+    this.elements.loginPassword = document.getElementById('login-password');
+    this.elements.registerUsername = document.getElementById('register-username');
+    this.elements.registerEmail = document.getElementById('register-email');
+    this.elements.registerPassword = document.getElementById('register-password');
+    this.elements.registerConfirmPassword = document.getElementById('register-confirm-password');
+  },
+  
+  setupLobbyPage: function() {
+    // Seções
+    this.elements.roomsSection = document.getElementById('rooms-section');
+    this.elements.roomsList = document.getElementById('rooms-list');
+    this.elements.createRoomModal = document.getElementById('create-room-modal');
+    this.elements.createRoomForm = document.getElementById('create-room-form');
+    
+    // Tabs
+    this.elements.roomTabs = document.querySelectorAll('.room-tab');
+    
+    // Botões
+    this.elements.btnCreateRoom = document.getElementById('btn-create-room');
+    this.elements.btnRefreshRooms = document.getElementById('btn-refresh-rooms');
+    
+    // Campos
+    this.elements.searchRooms = document.getElementById('search-rooms');
+  },
+  
+  setupGamePage: function() {
+    // Seções
+    this.elements.gameRoom = document.getElementById('game-room-section');
+    this.elements.gameBoard = document.getElementById('game-board');
+    this.elements.waitingScreen = document.getElementById('waiting-screen');
+    
+    // Game elements
+    this.elements.playerHand = document.getElementById('player-hand');
+    this.elements.discardPile = document.getElementById('discard-pile');
+    this.elements.drawPile = document.getElementById('draw-pile');
+    this.elements.gameStatus = document.getElementById('game-status');
+    this.elements.playersList = document.getElementById('players-list');
+    
+    // Botões
+    this.elements.btnStartGame = document.getElementById('btn-start-game');
+    this.elements.btnLeaveRoom = document.getElementById('btn-leave-room');
+    this.elements.btnDrawCard = document.getElementById('btn-draw');
+    this.elements.btnPass = document.getElementById('btn-pass');
+    this.elements.btnUno = document.getElementById('btn-uno');
+    
+    // Modais
+    this.elements.colorPickerModal = document.getElementById('color-picker-modal');
+    this.elements.gameOverModal = document.getElementById('game-over-modal');
+    
+    // Chat
+    this.elements.chatMessages = document.getElementById('chat-messages');
+    this.elements.chatInput = document.getElementById('chat-input');
+    this.elements.sendMessage = document.getElementById('send-message');
+  },
+  
+  initEventListeners: function() {
+    // Fechar modais em clique fora
+    window.addEventListener('click', (e) => {
+      const modals = document.querySelectorAll('.modal');
+      modals.forEach(modal => {
         if (e.target === modal) {
           this.closeModal(modal);
         }
       });
     });
-
-    // Modo de jogo personalizado e No Mercy
-    const classicMode = document.getElementById('classic-mode');
-    const customMode = document.getElementById('custom-mode');
-    const nomercyMode = document.getElementById('nomercy-mode');
-    const customRules = document.getElementById('custom-rules');
-    const nomercyRules = document.getElementById('nomercy-rules');
-
-    if (classicMode && customMode && nomercyMode && customRules && nomercyRules) {
-      classicMode.addEventListener('change', () => {
-        customRules.classList.add('hidden');
-        nomercyRules.classList.add('hidden');
+    
+    // Fechar modais em botões de fechar
+    const closeButtons = document.querySelectorAll('.close-modal');
+    closeButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const modal = button.closest('.modal');
+        this.closeModal(modal);
       });
-
-      customMode.addEventListener('change', () => {
-        customRules.classList.remove('hidden');
-        nomercyRules.classList.add('hidden');
+    });
+    
+    // Adicionar event listeners para tabs se existirem
+    if (this.elements.tabLogin && this.elements.tabRegister) {
+      this.elements.tabLogin.addEventListener('click', () => {
+        this.showTab('login');
       });
       
-      nomercyMode.addEventListener('change', () => {
-        customRules.classList.add('hidden');
-        nomercyRules.classList.remove('hidden');
+      this.elements.tabRegister.addEventListener('click', () => {
+        this.showTab('register');
       });
     }
-
-    // Salas privadas
-    const roomIsPrivate = document.getElementById('room-is-private');
-    const privateCodeContainer = document.getElementById('private-code-container');
-
-    if (roomIsPrivate && privateCodeContainer) {
-      roomIsPrivate.addEventListener('change', () => {
-        if (roomIsPrivate.checked) {
-          privateCodeContainer.classList.remove('hidden');
-          this.generateRoomCode();
-        } else {
-          privateCodeContainer.classList.add('hidden');
-        }
-      });
-    }
-
-    // Gerar código de sala
-    const generateCodeBtn = document.getElementById('generate-code');
-    if (generateCodeBtn) {
-      generateCodeBtn.addEventListener('click', () => this.generateRoomCode());
-    }
-
-    // Copiar código de sala
-    const copyCodeBtn = document.getElementById('copy-code');
-    if (copyCodeBtn) {
-      copyCodeBtn.addEventListener('click', () => {
-        const roomCode = document.getElementById('room-code').value;
-        this.copyToClipboard(roomCode);
-        this.showToast('Código copiado para a área de transferência!', 'success');
-      });
-    }
-
-    // Chat toggle
-    const toggleChatBtn = document.getElementById('toggle-chat');
-    const chatContainer = document.querySelector('.chat-container');
     
-    if (toggleChatBtn && chatContainer) {
-      toggleChatBtn.addEventListener('click', () => {
-        chatContainer.classList.toggle('collapsed');
-        toggleChatBtn.querySelector('i').classList.toggle('fa-chevron-down');
-        toggleChatBtn.querySelector('i').classList.toggle('fa-chevron-up');
-      });
-    }
-
-    // Avatar aleatório
+    // Adicionar event listeners para randomização de avatar se existir
     const randomizeAvatarBtn = document.getElementById('randomize-avatar');
-    const currentAvatar = document.getElementById('current-avatar');
-    
-    if (randomizeAvatarBtn && currentAvatar) {
+    if (randomizeAvatarBtn) {
       randomizeAvatarBtn.addEventListener('click', () => {
-        const seed = Math.random().toString(36).substring(2, 10);
-        currentAvatar.src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${seed}`;
-        document.getElementById('avatar-seed').value = seed;
-        
-        // Remover avatarURL se estiver usando avatar gerado
-        localStorage.removeItem('avatarURL');
-        localStorage.setItem('avatar', seed);
-        
-        // Atualizar o header do usuário se existir
-        this.updateUserAvatar(`https://api.dicebear.com/6.x/avataaars/svg?seed=${seed}`);
+        this.randomizeAvatar();
       });
     }
     
-    // Upload de avatar
+    // Adicionar event listeners para upload de avatar se existir
     const uploadAvatarBtn = document.getElementById('upload-avatar');
-    const avatarUploadInput = document.getElementById('avatar-upload');
+    const avatarUpload = document.getElementById('avatar-upload');
     
-    if (uploadAvatarBtn && avatarUploadInput) {
+    if (uploadAvatarBtn && avatarUpload) {
       uploadAvatarBtn.addEventListener('click', () => {
-        avatarUploadInput.click();
+        avatarUpload.click();
       });
       
-      avatarUploadInput.addEventListener('change', (e) => {
-        if (e.target.files && e.target.files[0]) {
-          this.handleAvatarUpload(e.target.files[0]);
-        }
+      avatarUpload.addEventListener('change', (e) => {
+        this.handleAvatarUpload(e);
       });
     }
-  },
-
-  // Tratar upload de avatar
-  async handleAvatarUpload(file) {
-    if (!file || !auth.currentUser) return;
     
-    try {
-      // Validar tamanho e tipo
-      if (file.size > 2 * 1024 * 1024) { // 2MB max
-        this.showToast('A imagem deve ter no máximo 2MB!', 'error');
-        return;
-      }
-      
-      if (!file.type.match('image.*')) {
-        this.showToast('O arquivo selecionado não é uma imagem!', 'error');
-        return;
-      }
-      
-      this.showToast('Enviando imagem...', 'info');
-      
-      // Redimensionar imagem antes do upload para garantir tamanho adequado
-      const img = await this.resizeImage(file, 300, 300);
-      
-      // Converter para Blob
-      const imgBlob = await fetch(img).then(r => r.blob());
-      
-      // Referência para o storage
-      const userId = auth.currentUser.uid;
-      const storageRef = storage.ref();
-      const avatarRef = storageRef.child(`avatars/${userId}`);
-      
-      // Fazer upload
-      await avatarRef.put(imgBlob);
-      
-      // Obter URL da imagem
-      const avatarURL = await avatarRef.getDownloadURL();
-      
-      // Atualizar avatar no preview
-      document.getElementById('current-avatar').src = avatarURL;
-      
-      // Salvar URL no localStorage
-      localStorage.setItem('avatarURL', avatarURL);
-      localStorage.removeItem('avatar'); // Remover seed do avatar gerado
-      
-      // Atualizar o header do usuário se existir
-      this.updateUserAvatar(avatarURL);
-      
-      this.showToast('Avatar atualizado com sucesso!', 'success');
-    } catch (error) {
-      console.error('Erro ao fazer upload do avatar:', error);
-      this.showToast('Erro ao fazer upload do avatar: ' + error.message, 'error');
+    // Chat toggle se existir
+    const toggleChatBtn = document.getElementById('toggle-chat');
+    if (toggleChatBtn) {
+      toggleChatBtn.addEventListener('click', () => {
+        const chatContainer = document.querySelector('.chat-container');
+        chatContainer.classList.toggle('collapsed');
+      });
     }
   },
-
-  // Redimensionar imagem para tamanho adequado
-  resizeImage(file, maxWidth, maxHeight) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = function(event) {
-        const img = new Image();
-        img.src = event.target.result;
-        
-        img.onload = function() {
-          let width = img.width;
-          let height = img.height;
-          
-          // Calcular dimensões proporcionais
-          if (width > height) {
-            if (width > maxWidth) {
-              height *= maxWidth / width;
-              width = maxWidth;
-            }
-          } else {
-            if (height > maxHeight) {
-              width *= maxHeight / height;
-              height = maxHeight;
-            }
-          }
-          
-          // Criar canvas para redimensionar
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          // Retornar imagem como data URL
-          resolve(canvas.toDataURL('image/jpeg', 0.8));
-        };
-        
-        img.onerror = function(error) {
-          reject(error);
-        };
-      };
-      
-      reader.onerror = function(error) {
-        reject(error);
-      };
+  
+  setupCurrentPage: function() {
+    const pathname = window.location.pathname;
+    
+    if (pathname.includes('index.html') || pathname === '/') {
+      // Página inicial
+      console.log('Página inicial carregada');
+    } else if (pathname.includes('lobby.html')) {
+      // Página de lobby
+      console.log('Página de lobby carregada');
+    } else if (pathname.includes('game.html')) {
+      // Página de jogo
+      console.log('Página de jogo carregada');
+    }
+  },
+  
+  // Método para mostrar toast notifications
+  showToast: function(message, type = 'info', duration = 3000) {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    let icon = '';
+    switch (type) {
+      case 'success':
+        icon = '<i class="fas fa-check-circle"></i>';
+        break;
+      case 'error':
+        icon = '<i class="fas fa-times-circle"></i>';
+        break;
+      case 'warning':
+        icon = '<i class="fas fa-exclamation-triangle"></i>';
+        break;
+      default:
+        icon = '<i class="fas fa-info-circle"></i>';
+    }
+    
+    toast.innerHTML = `
+      <div class="toast-content">
+        <div class="toast-icon">${icon}</div>
+        <div class="toast-message">${message}</div>
+      </div>
+    `;
+    
+    this.elements.toastContainer.appendChild(toast);
+    
+    // Mostrar toast
+    setTimeout(() => {
+      toast.classList.add('show');
+    }, 10);
+    
+    // Remover toast
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => {
+        this.elements.toastContainer.removeChild(toast);
+      }, 300);
+    }, duration);
+  },
+  
+  // Método para mostrar/esconder seções
+  showSection: function(sectionId) {
+    const sections = document.querySelectorAll('.section');
+    
+    sections.forEach(section => {
+      if (section.id === sectionId) {
+        section.classList.remove('hidden');
+      } else {
+        section.classList.add('hidden');
+      }
     });
   },
-
-  // Atualizar avatar do usuário no header
-  updateUserAvatar(avatarURL) {
-    const headerAvatar = document.querySelector('.user-avatar img');
-    if (headerAvatar) {
-      headerAvatar.src = avatarURL;
+  
+  // Método para mostrar tabs
+  showTab: function(tabName) {
+    const tabs = document.querySelectorAll('.tab');
+    const forms = document.querySelectorAll('.auth-form');
+    
+    // Atualizar tabs
+    tabs.forEach(tab => {
+      if (tab.id === `tab-${tabName}`) {
+        tab.classList.add('active');
+      } else {
+        tab.classList.remove('active');
+      }
+    });
+    
+    // Atualizar formulários
+    forms.forEach(form => {
+      if (form.id === `${tabName}-form`) {
+        form.classList.remove('hidden');
+      } else {
+        form.classList.add('hidden');
+      }
+    });
+    
+    // Atualizar título
+    const authTitle = document.getElementById('auth-title');
+    if (authTitle) {
+      authTitle.textContent = tabName === 'login' ? 'Login' : 'Registrar';
     }
   },
-
-  // Troca entre as abas de login e registro
-  switchAuthTab(tab) {
-    if (tab === 'login') {
-      this.elements.tabLogin.classList.add('active');
-      this.elements.tabRegister.classList.remove('active');
-      this.elements.loginForm.classList.remove('hidden');
-      this.elements.registerForm.classList.add('hidden');
-    } else {
-      this.elements.tabLogin.classList.remove('active');
-      this.elements.tabRegister.classList.add('active');
-      this.elements.loginForm.classList.add('hidden');
-      this.elements.registerForm.classList.remove('hidden');
-    }
-  },
-
-  // Mostrar um modal
-  showModal(modal) {
+  
+  // Método para mostrar modal
+  showModal: function(modal) {
     if (!modal) return;
     
     modal.style.display = 'block';
@@ -326,9 +333,9 @@ const UI = {
       modal.classList.add('show');
     }, 10);
   },
-
-  // Fechar um modal
-  closeModal(modal) {
+  
+  // Método para fechar modal
+  closeModal: function(modal) {
     if (!modal) return;
     
     modal.classList.remove('show');
@@ -336,174 +343,497 @@ const UI = {
       modal.style.display = 'none';
     }, 300);
   },
-
-  // Mudar de seção
-  showSection(sectionId) {
-    const sections = document.querySelectorAll('.section');
-    sections.forEach(section => {
-      section.classList.add('hidden');
-    });
+  
+  // Método para randomizar avatar
+  randomizeAvatar: function() {
+    const seed = Math.random().toString(36).substring(2, 10);
+    const currentAvatar = document.getElementById('current-avatar');
     
-    const section = document.getElementById(sectionId);
-    if (section) {
-      section.classList.remove('hidden');
-    }
-  },
-
-  // Gerar código de sala aleatório
-  generateRoomCode() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    if (currentAvatar) {
+      currentAvatar.src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${seed}`;
     }
     
-    const roomCodeInput = document.getElementById('room-code');
-    if (roomCodeInput) {
-      roomCodeInput.value = code;
-    }
+    document.getElementById('avatar-seed').value = seed;
+    
+    // Limpar URL do avatar
+    localStorage.removeItem('avatarURL');
+    localStorage.setItem('avatar', seed);
   },
-
-  // Copiar para a área de transferência
-  copyToClipboard(text) {
-    // Verificar se a API clipboard está disponível
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text)
-        .catch(err => {
-          console.error('Erro ao copiar texto: ', err);
-          this.fallbackCopyToClipboard(text);
-        });
-    } else {
-      this.fallbackCopyToClipboard(text);
+  
+  // Método para fazer upload de avatar
+  handleAvatarUpload: async function(event) {
+    const file = event.target.files[0];
+    
+    if (!file) return;
+    
+    if (!file.type.match('image.*')) {
+      this.showToast('Apenas imagens são permitidas', 'error');
+      return;
     }
-  },
-
-  // Método alternativo para copiar para a área de transferência
-  fallbackCopyToClipboard(text) {
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-    document.body.appendChild(textarea);
-    textarea.focus();
-    textarea.select();
     
     try {
-      document.execCommand('copy');
-      this.showToast('Copiado para a área de transferência!', 'success');
-    } catch (err) {
-      console.error('Falha ao copiar texto', err);
-      this.showToast('Não foi possível copiar o texto. Tente novamente.', 'error');
+      // Verificar se o usuário está autenticado
+      if (!auth.currentUser) {
+        this.showToast('Você precisa estar logado para fazer upload de avatar', 'error');
+        return;
+      }
+      
+      this.showToast('Fazendo upload do avatar...', 'info');
+      
+      // Referenciar o arquivo no Storage
+      const storageRef = storage.ref(`avatars/${auth.currentUser.uid}`);
+      
+      // Fazer upload
+      const snapshot = await storageRef.put(file);
+      
+      // Obter URL do arquivo
+      const downloadURL = await snapshot.ref.getDownloadURL();
+      
+      // Atualizar UI
+      const currentAvatar = document.getElementById('current-avatar');
+      if (currentAvatar) {
+        currentAvatar.src = downloadURL;
+      }
+      
+      // Salvar URL no localStorage
+      localStorage.setItem('avatarURL', downloadURL);
+      localStorage.removeItem('avatar');
+      
+      this.showToast('Avatar atualizado com sucesso!', 'success');
+    } catch (error) {
+      console.error('Erro ao fazer upload de avatar:', error);
+      this.showToast('Erro ao fazer upload: ' + error.message, 'error');
+    }
+  },
+  
+  // Métodos para UI do jogo
+  renderCard: function(card, index, isPlayable = true) {
+    const cardElement = document.createElement('div');
+    cardElement.className = `uno-card ${card.color || 'wild'}`;
+    
+    // Adicionar classes especiais baseadas no tipo da carta
+    if (card.type === 'number') {
+      cardElement.classList.add('number');
+    } else if (card.type === 'action') {
+      cardElement.classList.add(card.value);
+    } else if (card.type === 'wild' || card.type === 'wild-draw-four') {
+      cardElement.classList.add(card.value);
+    } else if (card.type === 'special') {
+      cardElement.classList.add('special');
+      cardElement.classList.add(card.value);
     }
     
-    document.body.removeChild(textarea);
+    // Adicionar conteúdo da carta
+    if (card.type === 'number') {
+      cardElement.innerHTML = `<span class="card-value">${card.value}</span>`;
+    } else if (card.type === 'action') {
+      let icon = '';
+      switch (card.value) {
+        case 'skip':
+          icon = '<i class="fas fa-ban"></i>';
+          break;
+        case 'reverse':
+          icon = '<i class="fas fa-sync-alt"></i>';
+          break;
+        case 'draw-two':
+          icon = '+2';
+          break;
+      }
+      cardElement.innerHTML = `<span class="card-value">${icon}</span>`;
+    } else if (card.type === 'wild') {
+      cardElement.innerHTML = '<div class="wild-colors"></div>';
+    } else if (card.type === 'wild-draw-four') {
+      cardElement.innerHTML = '<div class="wild-colors"></div><span class="card-value">+4</span>';
+    } else if (card.type === 'special' && card.value === 'draw-ninetynine') {
+      cardElement.innerHTML = '<span class="card-value">+99</span>';
+    }
+    
+    // Adicionar data attributes
+    cardElement.dataset.index = index;
+    cardElement.dataset.type = card.type;
+    cardElement.dataset.value = card.value;
+    if (card.color) cardElement.dataset.color = card.color;
+    
+    // Adicionar classe se a carta for jogável
+    if (isPlayable) {
+      cardElement.classList.add('playable');
+    } else {
+      cardElement.classList.add('not-playable');
+    }
+    
+    return cardElement;
   },
-
-  // Mostrar toast de notificação
-  showToast(message, type = 'info') {
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `
-      ${message}
-      <button class="toast-close">&times;</button>
+  
+  renderCardBack: function() {
+    const cardElement = document.createElement('div');
+    cardElement.className = 'uno-card back';
+    return cardElement;
+  },
+  
+  renderPlayerHand: function(cards, currentColor, topCard) {
+    const playerHand = this.elements.playerHand;
+    playerHand.innerHTML = '';
+    
+    if (!cards || cards.length === 0) {
+      return;
+    }
+    
+    cards.forEach((card, index) => {
+      const isPlayable = canPlayCard(card, topCard, currentColor);
+      const cardElement = this.renderCard(card, index, isPlayable);
+      playerHand.appendChild(cardElement);
+    });
+  },
+  
+  renderDiscardPile: function(card) {
+    const discardPile = this.elements.discardPile;
+    discardPile.innerHTML = '';
+    
+    if (!card) {
+      return;
+    }
+    
+    const cardElement = this.renderCard(card, 0, false);
+    discardPile.appendChild(cardElement);
+  },
+  
+  updateGameStatus: function(status) {
+    if (this.elements.gameStatus) {
+      this.elements.gameStatus.textContent = status;
+    }
+  },
+  
+  showColorPicker: function() {
+    this.showModal(this.elements.colorPickerModal);
+  },
+  
+  showGameOver: function(winner, score) {
+    // Preencher dados do vencedor
+    document.getElementById('winner-avatar-img').src = winner.avatar;
+    document.getElementById('winner-name').textContent = winner.name;
+    
+    // Adicionar estatísticas
+    const statsContainer = document.getElementById('game-stats');
+    statsContainer.innerHTML = `
+      <div class="stat-item">
+        <span class="stat-label">Pontuação</span>
+        <span class="stat-value">${score}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Tempo de Jogo</span>
+        <span class="stat-value">${this.calculateGameTime()} min</span>
+      </div>
     `;
     
-    const container = document.getElementById('toast-container');
-    if (container) {
-      container.appendChild(toast);
-    } else {
-      // Se não existir o container, criar um
-      const newContainer = document.createElement('div');
-      newContainer.id = 'toast-container';
-      newContainer.className = 'toast-container';
-      document.body.appendChild(newContainer);
-      newContainer.appendChild(toast);
+    // Mostrar modal
+    this.showModal(this.elements.gameOverModal);
+  },
+  
+  calculateGameTime: function() {
+    // Implementação básica, idealmente pegaria a diferença entre timestamps de início e fim
+    return '10';
+  },
+  
+  addChatMessage: function(message) {
+    if (!this.elements.chatMessages) return;
+    
+    const chatContainer = document.createElement('div');
+    chatContainer.className = `chat-message ${message.type || 'other'}`;
+    
+    let content = '';
+    
+    if (message.type !== 'system') {
+      content += `<div class="chat-message-sender">${message.sender}</div>`;
     }
     
-    toast.querySelector('.toast-close').addEventListener('click', () => {
-      toast.remove();
+    content += `<div class="chat-message-content">${message.text}</div>`;
+    
+    chatContainer.innerHTML = content;
+    this.elements.chatMessages.appendChild(chatContainer);
+    this.elements.chatMessages.scrollTop = this.elements.chatMessages.scrollHeight;
+  },
+  
+  renderPlayersList: function(players, currentPlayerId) {
+    if (!this.elements.playersList) return;
+    
+    this.elements.playersList.innerHTML = '';
+    
+    Object.values(players).forEach(player => {
+      const playerItem = document.createElement('div');
+      playerItem.className = 'player-item';
+      
+      if (player.id === currentPlayerId) {
+        playerItem.classList.add('current');
+      }
+      
+      const hostBadge = player.isHost ? '<div class="player-host-badge">Host</div>' : '';
+      
+      playerItem.innerHTML = `
+        <div class="player-avatar">
+          <img src="${player.avatar}" alt="${player.name}">
+        </div>
+        <div class="player-info">
+          <div class="player-name">${player.name} ${hostBadge}</div>
+          <div class="player-cards-count">${player.cardsCount} cartas</div>
+        </div>
+      `;
+      
+      this.elements.playersList.appendChild(playerItem);
     });
-    
-    setTimeout(() => {
-      toast.remove();
-    }, 3000);
   },
-
-  // Atualizar a cor atual
-  updateCurrentColor(color) {
-    const currentColor = document.getElementById('current-color');
+  
+  renderOpponents: function(players, currentPlayerId, currentPlayer) {
+    const opponentsArea = document.querySelector('.opponents-area');
+    
+    if (!opponentsArea) return;
+    
+    opponentsArea.innerHTML = '';
+    
+    const otherPlayers = Object.values(players).filter(
+      player => player.id !== auth.currentUser.uid
+    );
+    
+    otherPlayers.forEach(player => {
+      const isCurrentTurn = player.id === currentPlayer;
+      
+      const opponent = document.createElement('div');
+      opponent.className = `opponent ${isCurrentTurn ? 'current-turn' : ''}`;
+      
+      opponent.innerHTML = `
+        <div class="opponent-avatar">
+          <img src="${player.avatar}" alt="${player.name}">
+        </div>
+        <div class="opponent-name">${player.name}</div>
+        <div class="opponent-cards">
+          ${Array(player.cardsCount).fill().map(() => 
+            '<div class="uno-card back"></div>'
+          ).join('')}
+        </div>
+      `;
+      
+      opponentsArea.appendChild(opponent);
+    });
+  },
+  
+  updateCurrentColor: function(color) {
     const colorIndicator = document.querySelector('.color-indicator');
-    
-    if (currentColor && colorIndicator) {
-      currentColor.classList.remove('hidden');
+    if (colorIndicator) {
       colorIndicator.style.backgroundColor = `var(--${color})`;
+      document.querySelector('.current-color').classList.remove('hidden');
     }
   },
-
-  // Atualizar o estado do jogo
-  updateGameStatus(message) {
-    const gameStatus = document.getElementById('game-status');
-    if (gameStatus) {
-      gameStatus.textContent = message;
-    }
-  },
-
-  // Criar um elemento de carta UNO
-  createCardElement(card) {
-    const cardElement = document.createElement('div');
+  
+  animateCardPlay: function(sourceElementId, targetElementId, callback) {
+    const source = document.getElementById(sourceElementId);
+    const target = document.getElementById(targetElementId);
     
-    if (card.type === 'back') {
-      cardElement.className = 'uno-card back';
-      return cardElement;
+    if (!source || !target) {
+      if (callback) callback();
+      return;
     }
     
-    let className = 'uno-card';
+    // Clone da carta para animação
+    const cardClone = source.cloneNode(true);
+    document.body.appendChild(cardClone);
     
-    if (card.color) {
-      className += ` ${card.color}`;
+    // Posições iniciais e finais
+    const sourceRect = source.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    
+    // Posicionar clone
+    cardClone.style.position = 'fixed';
+    cardClone.style.top = `${sourceRect.top}px`;
+    cardClone.style.left = `${sourceRect.left}px`;
+    cardClone.style.width = `${sourceRect.width}px`;
+    cardClone.style.height = `${sourceRect.height}px`;
+    cardClone.style.transition = 'all 0.5s ease-in-out';
+        // Posicionar clone
+        cardClone.style.position = 'fixed';
+        cardClone.style.top = `${sourceRect.top}px`;
+        cardClone.style.left = `${sourceRect.left}px`;
+        cardClone.style.width = `${sourceRect.width}px`;
+        cardClone.style.height = `${sourceRect.height}px`;
+        cardClone.style.transition = 'all 0.5s ease-in-out';
+        cardClone.style.zIndex = '9999';
+        
+        // Animar para o destino
+        setTimeout(() => {
+          cardClone.style.top = `${targetRect.top}px`;
+          cardClone.style.left = `${targetRect.left}px`;
+          cardClone.style.transform = 'rotate(0deg)';
+        }, 50);
+        
+        // Remover clone após animação
+        setTimeout(() => {
+          document.body.removeChild(cardClone);
+          if (callback) callback();
+        }, 550);
+      },
+      
+      animateCardDraw: function(callback) {
+        const drawPile = this.elements.drawPile;
+        const playerHand = this.elements.playerHand;
+        
+        if (!drawPile || !playerHand) {
+          if (callback) callback();
+          return;
+        }
+        
+        // Criar carta temporária para animar
+        const tempCard = this.renderCardBack();
+        document.body.appendChild(tempCard);
+        
+        // Posições
+        const pileRect = drawPile.getBoundingClientRect();
+        const handRect = playerHand.getBoundingClientRect();
+        
+        // Posicionar carta
+        tempCard.style.position = 'fixed';
+        tempCard.style.top = `${pileRect.top}px`;
+        tempCard.style.left = `${pileRect.left}px`;
+        tempCard.style.width = `${pileRect.width}px`;
+        tempCard.style.height = `${pileRect.height}px`;
+        tempCard.style.transition = 'all 0.5s ease-in-out';
+        tempCard.style.zIndex = '9999';
+        
+        // Animar para a mão
+        setTimeout(() => {
+          tempCard.style.top = `${handRect.top}px`;
+          tempCard.style.left = `${handRect.left}px`;
+        }, 50);
+        
+        // Remover carta temporária
+        setTimeout(() => {
+          document.body.removeChild(tempCard);
+          if (callback) callback();
+        }, 550);
+      },
+      
+      highlightCurrentPlayer: function(playerId) {
+        const playerItems = document.querySelectorAll('.player-item');
+        
+        playerItems.forEach(item => {
+          const id = item.dataset.playerId;
+          if (id === playerId) {
+            item.classList.add('current');
+          } else {
+            item.classList.remove('current');
+          }
+        });
+      },
+      
+      renderRoomItem: function(room) {
+        const roomItem = document.createElement('div');
+        roomItem.className = 'room-item';
+        roomItem.dataset.roomId = room.id;
+        
+        // Verificar status da sala
+        const statusClass = room.status === 'waiting' ? 'waiting' : 
+                            room.status === 'playing' ? 'playing' : 'finished';
+        
+        // Verificar se é privada
+        const lockIcon = room.isPrivate ? 
+          '<i class="fas fa-lock room-private-icon"></i>' : '';
+        
+        // Modo de jogo
+        const gameMode = room.gameMode === 'classic' ? 'Clássico' : 
+                        room.gameMode === 'special' ? 'Especial' : 'Personalizado';
+        
+        roomItem.innerHTML = `
+          <div class="room-header">
+            <div class="room-name">${lockIcon} ${room.name}</div>
+            <div class="room-status ${statusClass}">
+              ${room.status === 'waiting' ? 'Aguardando' : 
+                room.status === 'playing' ? 'Jogando' : 'Finalizado'}
+            </div>
+          </div>
+          <div class="room-details">
+            <div class="room-host">
+              <img src="${room.host.avatar}" alt="${room.host.name}" class="host-avatar">
+              <span>Host: ${room.host.name}</span>
+            </div>
+            <div class="room-info">
+              <div class="room-players">
+                <i class="fas fa-users"></i> ${room.playersCount}/${room.maxPlayers}
+              </div>
+              <div class="room-mode">
+                <i class="fas fa-gamepad"></i> ${gameMode}
+              </div>
+            </div>
+          </div>
+          <div class="room-actions">
+            <button class="btn btn-primary btn-join-room" data-room-id="${room.id}">
+              ${room.status === 'waiting' ? 'Entrar' : 'Observar'}
+            </button>
+          </div>
+        `;
+        
+        return roomItem;
+      },
+      
+      renderRooms: function(rooms) {
+        if (!this.elements.roomsList) return;
+        
+        this.elements.roomsList.innerHTML = '';
+        
+        if (rooms.length === 0) {
+          this.elements.roomsList.innerHTML = `
+            <div class="no-rooms">
+              <i class="fas fa-search"></i>
+              <p>Nenhuma sala encontrada</p>
+              <p>Crie uma nova sala para começar a jogar!</p>
+            </div>
+          `;
+          return;
+        }
+        
+        rooms.forEach(room => {
+          const roomItem = this.renderRoomItem(room);
+          this.elements.roomsList.appendChild(roomItem);
+        });
+      },
+      
+      setupTabSwitching: function(tabsId, contentsId) {
+        const tabs = document.querySelectorAll(`${tabsId} .tab`);
+        const contents = document.querySelectorAll(`${contentsId} .tab-content`);
+        
+        tabs.forEach(tab => {
+          tab.addEventListener('click', () => {
+            const target = tab.dataset.target;
+            
+            // Atualizar tabs
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            // Atualizar conteúdos
+            contents.forEach(content => {
+              if (content.id === target) {
+                content.classList.add('active');
+              } else {
+                content.classList.remove('active');
+              }
+            });
+          });
+        });
+      }
+    };
+    
+    // Funções auxiliares
+    function canPlayCard(card, topCard, currentColor) {
+      // Coringas podem ser jogados a qualquer momento
+      if (card.type === 'wild' || card.type === 'wild-draw-four' || card.type === 'special') {
+        return true;
+      }
+      
+      // Se a cor é a mesma
+      if (card.color === currentColor) {
+        return true;
+      }
+      
+      // Se o valor é o mesmo
+      if (card.value === topCard.value) {
+        return true;
+      }
+      
+      return false;
     }
-    
-    if (card.type === 'number') {
-      className += ' number';
-      cardElement.setAttribute('data-value', card.value);
-      cardElement.innerHTML = `<span class="card-value">${card.value}</span>`;
-    } else {
-      className += ` ${card.type}`;
-    }
-    
-    cardElement.className = className;
-    cardElement.dataset.cardId = card.id;
-    
-    return cardElement;
-  },
-
-  // Limpar a mão do jogador
-  clearPlayerHand() {
-    const playerHand = document.getElementById('player-hand');
-    if (playerHand) {
-      playerHand.innerHTML = '';
-    }
-  },
-
-  // Adicionar uma carta à mão do jogador
-  addCardToPlayerHand(card) {
-    const playerHand = document.getElementById('player-hand');
-    if (!playerHand) return null;
-    
-    const cardElement = this.createCardElement(card);
-    playerHand.appendChild(cardElement);
-    return cardElement;
-  },
-
-  // Atualizar a pilha de descarte
-  updateDiscardPile(card) {
-    const discardPile = document.getElementById('discard-pile');
-    if (!discardPile) return;
-    
-    discardPile.innerHTML = '';
-    if (card) {
-      const cardElement = this.createCardElement(card);
-      discardPile.appendChild(cardElement);
-    }
-  }
-};

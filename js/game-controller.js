@@ -1,211 +1,260 @@
-// Controlador específico para a página do jogo
-const GameController = {
-  // Referências para o jogo e sala
-  roomId: null,
-  isHost: false,
-
-  // Inicializar a página do jogo
-  init() {
-    // Obter ID da sala da URL
-    const urlParams = new URLSearchParams(window.location.search);
-    this.roomId = urlParams.get('roomId');
-
-    if (!this.roomId) {
-      // Se não tiver roomId, volta para a página inicial
-      UI.showToast('ID da sala não encontrado!', 'error');
+// GameController.js - Controla a interface do jogo
+class GameController {
+  constructor() {
+    // Parâmetros da URL
+    this.roomCode = this.getRoomCodeFromURL();
+    
+    // Instância de jogo
+    this.game = null;
+    
+    // Chat
+    this.chat = null;
+    
+    // Elementos da UI
+    this.btnStartGame = document.getElementById('btn-start-game');
+    this.btnLeaveRoom = document.getElementById('btn-leave-room');
+    this.btnDrawCard = document.getElementById('btn-draw');
+    this.btnPass = document.getElementById('btn-pass');
+    this.btnUno = document.getElementById('btn-uno');
+    this.colorButtons = document.querySelectorAll('.color-btn');
+    
+    this.initialize();
+  }
+  
+  async initialize() {
+    try {
+      // Verificar autenticação
+      this.checkAuth();
+      
+      // Verificar se há código de sala
+      if (!this.roomCode) {
+        UI.showToast('Código de sala não encontrado', 'error');
+        setTimeout(() => {
+          window.location.href = 'lobby.html';
+        }, 2000);
+        return;
+      }
+      
+      // Inicializar jogo
+      this.game = new UnoGame(this.roomCode);
+      
+      // Inicializar chat
+      this.chat = new Chat(this.roomCode);
+      
+      // Configurar event listeners
+      this.setupEventListeners();
+      
+      // Atualizar UI do perfil
+      this.updateProfileUI();
+    } catch (error) {
+      console.error('Erro ao inicializar controlador do jogo:', error);
+      UI.showToast('Erro ao inicializar jogo: ' + error.message, 'error');
+      
+      // Redirecionar para o lobby em caso de erro
       setTimeout(() => {
         window.location.href = 'lobby.html';
-      }, 1500);
-      return;
+      }, 3000);
     }
-
-    // Verificar se usuário está logado
-    auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        try {
-          // Inicializar UI
-          UI.init();
-          
-          // Obter informações da sala
-          const roomSnapshot = await database.ref(`rooms/${this.roomId}`).once('value');
-          const room = roomSnapshot.val();
-          
-          if (!room) {
-            UI.showToast('Sala não encontrada!', 'error');
-            setTimeout(() => {
-              window.location.href = 'lobby.html';
-            }, 1500);
-            return;
-          }
-          
-          // Verificar se é o host
-          this.isHost = room.hostId === auth.currentUser.uid;
-          
-          // Verificar se o jogo já começou
-          if (room.status !== 'playing' && !room.players[auth.currentUser.uid]) {
-            UI.showToast('O jogo ainda não começou ou você não é um jogador desta sala!', 'info');
-            setTimeout(() => {
-              window.location.href = `lobby.html?roomId=${this.roomId}`;
-            }, 1500);
-            return;
-          }
-          
-          // Inicializar a sala
-          await Room.initRoom(this.roomId);
-          
-          // Configurar eventos específicos da página do jogo
-          this.setupEventListeners();
-          
-          // Inicializar jogo se Game estiver definido
-          if (typeof Game !== 'undefined') {
-            Game.initGame(this.roomId, this.isHost);
-          } else {
-            console.error('Game object is not defined!');
-            UI.showToast('Erro ao carregar o jogo. A função do jogo não está definida!', 'error');
-          }
-          
-          // Atualizar avatar do jogador
-          this.updatePlayerAvatar();
-          
-          // Registrar estatística de jogo
-          this.registerGameStarted();
-        } catch (error) {
-          console.error('Erro ao inicializar jogo:', error);
-          UI.showToast('Erro ao carregar o jogo!', 'error');
-          
-          setTimeout(() => {
-            window.location.href = 'lobby.html';
-          }, 1500);
-        }
-      } else {
-        // Redirecionar para a página de login
-        window.location.href = 'index.html';
-      }
-    });
-  },
-
-  // Configurar event listeners específicos
-  setupEventListeners() {
-    // Botão para sair do jogo
-    document.getElementById('btn-leave-room').addEventListener('click', async () => {
-      try {
-        await Room.leaveRoom();
-        window.location.href = 'lobby.html';
-      } catch (error) {
-        console.error('Erro ao sair da sala:', error);
-        UI.showToast('Erro ao sair da sala!', 'error');
-      }
-    });
-
-    // Botão para copiar código
-    document.getElementById('copy-room-code').addEventListener('click', () => {
-      const code = document.getElementById('room-code-text').textContent;
-      UI.copyToClipboard(code);
-      UI.showToast('Código copiado para a área de transferência!', 'success');
-    });
-    
-    // Botão para iniciar jogo (em caso de ser host e jogo não iniciado)
-    document.getElementById('btn-start-game').addEventListener('click', async () => {
-      try {
-        // Verificar se há jogadores suficientes
-        const roomSnapshot = await database.ref(`rooms/${this.roomId}`).once('value');
-        const room = roomSnapshot.val();
-        
-        if (room && room.players && Object.keys(room.players).length < 2) {
-          UI.showToast('É preciso pelo menos 2 jogadores para iniciar!', 'error');
-          return;
-        }
-        
-        // Iniciar o jogo
-        if (typeof Game !== 'undefined' && Game.startGame) {
-          await Game.startGame();
-        } else {
-          console.error('Game.startGame function is not defined!');
-          UI.showToast('Erro ao iniciar o jogo. A função não está definida!', 'error');
-        }
-      } catch (error) {
-        console.error('Erro ao iniciar o jogo:', error);
-        UI.showToast('Erro ao iniciar o jogo!', 'error');
-      }
-    });
-    
-    // Botão para encerrar jogo
-    document.getElementById('btn-end-game').addEventListener('click', async () => {
-      try {
-        await Room.endGame();
-      } catch (error) {
-        console.error('Erro ao encerrar o jogo:', error);
-        UI.showToast('Erro ao encerrar o jogo!', 'error');
-      }
-    });
-    
-    // Toggle para o chat
-    const toggleChatBtn = document.getElementById('toggle-chat');
-    const chatContainer = document.querySelector('.chat-container');
-    
-    if (toggleChatBtn && chatContainer) {
-      toggleChatBtn.addEventListener('click', () => {
-        chatContainer.classList.toggle('collapsed');
-        const icon = toggleChatBtn.querySelector('i');
-        if (icon) {
-          icon.classList.toggle('fa-chevron-down');
-          icon.classList.toggle('fa-chevron-up');
-        }
-      });
-    }
-  },
+  }
   
-  // Atualizar avatar do jogador
-  updatePlayerAvatar() {
-    const playerAvatarImg = document.getElementById('player-avatar-img');
-    const playerName = document.getElementById('player-name');
+  getRoomCodeFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('roomCode');
+  }
+  
+  checkAuth() {
+    // Verificar se o usuário está autenticado
+    if (!auth.currentUser) {
+      window.location.href = 'index.html';
+    }
+  }
+  
+  updateProfileUI() {
+    // Atualizar nome do usuário e avatar
+    const usernameElement = document.getElementById('username');
+    const userAvatarElement = document.getElementById('user-avatar');
     
-    if (playerAvatarImg && playerName) {
-      // Obter avatar do usuário
-      let avatarSrc;
+    if (usernameElement && userAvatarElement && auth.currentUser) {
+      // Nome do usuário
+      usernameElement.textContent = auth.currentUser.displayName || 'Jogador';
+      
+      // Avatar do usuário
       const avatarURL = localStorage.getItem('avatarURL');
       const avatarSeed = localStorage.getItem('avatar');
       
       if (avatarURL) {
-        avatarSrc = avatarURL;
+        userAvatarElement.src = avatarURL;
       } else if (avatarSeed) {
-        avatarSrc = `https://api.dicebear.com/6.x/avataaars/svg?seed=${avatarSeed}`;
+        userAvatarElement.src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${avatarSeed}`;
       } else if (auth.currentUser.photoURL) {
-        avatarSrc = auth.currentUser.photoURL;
+        userAvatarElement.src = auth.currentUser.photoURL;
       } else {
-        avatarSrc = `https://api.dicebear.com/6.x/avataaars/svg?seed=${auth.currentUser.uid}`;
+        // Gerar avatar baseado no UID
+        const seed = auth.currentUser.uid.substring(0, 8);
+        userAvatarElement.src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${seed}`;
       }
-      
-      playerAvatarImg.src = avatarSrc;
-      playerName.textContent = auth.currentUser.displayName || 'Você';
-    }
-  },
-  
-  // Registrar estatística de jogo iniciado
-  async registerGameStarted() {
-    try {
-      if (!auth.currentUser) return;
-      
-      // Incrementar contador de jogos
-      const statsRef = database.ref(`users/${auth.currentUser.uid}/stats`);
-      const statsSnapshot = await statsRef.once('value');
-      const stats = statsSnapshot.val() || {};
-      
-      // Incrementar valor ou inicializar
-      const gamesPlayed = (stats.gamesPlayed || 0) + 1;
-      
-      await statsRef.update({
-        gamesPlayed,
-        lastGameAt: firebase.database.ServerValue.TIMESTAMP
-      });
-    } catch (error) {
-      console.error('Erro ao registrar estatísticas:', error);
-      // Silenciosamente falha - não crítico
     }
   }
-};
+  
+  setupEventListeners() {
+    // Botão de iniciar jogo
+    if (this.btnStartGame) {
+      this.btnStartGame.addEventListener('click', () => this.startGame());
+    }
+    
+    // Botão de sair da sala
+    if (this.btnLeaveRoom) {
+      this.btnLeaveRoom.addEventListener('click', () => this.leaveRoom());
+    }
+    
+    // Botão de comprar carta
+    if (this.btnDrawCard) {
+      this.btnDrawCard.addEventListener('click', () => this.drawCard());
+    }
+    
+    // Botão de passar vez
+    if (this.btnPass) {
+      this.btnPass.addEventListener('click', () => this.passNextPlayer());
+    }
+    
+    // Botão de UNO
+    if (this.btnUno) {
+      this.btnUno.addEventListener('click', () => this.callUno());
+    }
+    
+    // Botões de cor
+    this.colorButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const color = button.dataset.color;
+        this.chooseColor(color);
+      });
+    });
+    
+    // Escutar teclas
+    document.addEventListener('keydown', (e) => {
+      // Espaço para comprar carta
+      if (e.code === 'Space' && this.game.currentPlayer === auth.currentUser.uid) {
+        this.drawCard();
+      }
+      
+      // U para gritar UNO
+      if (e.code === 'KeyU') {
+        this.callUno();
+      }
+    });
+    
+    // Event listener para recarregamento da página
+    window.addEventListener('beforeunload', () => {
+      // Tentar sair da sala de forma limpa
+      try {
+        this.game.leaveGame();
+      } catch (error) {
+        console.error('Erro ao sair da sala:', error);
+      }
+    });
+  }
+  
+  async startGame() {
+    try {
+      // Desabilitar botão para evitar cliques múltiplos
+      this.btnStartGame.disabled = true;
+      
+      // Iniciar jogo
+      await FirebaseService.game.start(this.roomCode);
+      
+      // A UI será atualizada automaticamente pelos listeners
+      UI.showToast('Jogo iniciado!', 'success');
+    } catch (error) {
+      console.error('Erro ao iniciar jogo:', error);
+      UI.showToast('Erro ao iniciar jogo: ' + error.message, 'error');
+      
+      // Reabilitar botão
+      this.btnStartGame.disabled = false;
+    }
+  }
+  
+  async leaveRoom() {
+    try {
+      // Pedir confirmação
+      if (confirm('Tem certeza que deseja sair da sala?')) {
+        await this.game.leaveGame();
+        
+        // Redirecionar para o lobby
+        window.location.href = 'lobby.html';
+      }
+    } catch (error) {
+      console.error('Erro ao sair da sala:', error);
+      UI.showToast('Erro ao sair da sala: ' + error.message, 'error');
+    }
+  }
+  
+  async drawCard() {
+    try {
+      // Verificar se é a vez do jogador
+      if (this.game.currentPlayer !== auth.currentUser.uid) {
+        UI.showToast('Não é sua vez de jogar', 'warning');
+        return;
+      }
+      
+      // Animação de compra
+      UI.animateCardDraw();
+      
+      // Comprar carta
+      await this.game.drawCard();
+    } catch (error) {
+      console.error('Erro ao comprar carta:', error);
+      UI.showToast('Erro ao comprar carta: ' + error.message, 'error');
+    }
+  }
+  
+  async passNextPlayer() {
+    try {
+      // Verificar se é a vez do jogador
+      if (this.game.currentPlayer !== auth.currentUser.uid) {
+        UI.showToast('Não é sua vez de jogar', 'warning');
+        return;
+      }
+      
+      // Comprar carta e passar (mesmo que drawCard, mas com mensagem diferente)
+      await this.game.drawCard();
+      UI.showToast('Você passou a vez', 'info');
+    } catch (error) {
+      console.error('Erro ao passar a vez:', error);
+      UI.showToast('Erro ao passar a vez: ' + error.message, 'error');
+    }
+  }
+  
+  async callUno() {
+    try {
+      await this.game.callUno();
+    } catch (error) {
+      console.error('Erro ao chamar UNO:', error);
+      UI.showToast('Erro ao chamar UNO: ' + error.message, 'error');
+    }
+  }
+  
+  async chooseColor(color) {
+    try {
+      await this.game.chooseColor(color);
+    } catch (error) {
+      console.error('Erro ao escolher cor:', error);
+      UI.showToast('Erro ao escolher cor: ' + error.message, 'error');
+    }
+  }
+  
+  copyRoomCode() {
+    try {
+      // Copiar código para a área de transferência
+      navigator.clipboard.writeText(this.roomCode);
+      UI.showToast('Código copiado para a área de transferência!', 'success');
+    } catch (error) {
+      console.error('Erro ao copiar código:', error);
+      UI.showToast('Erro ao copiar código: ' + error.message, 'error');
+    }
+  }
+}
 
-// Inicializar controlador quando a página carregar
+// Inicializar quando o DOM estiver carregado
 document.addEventListener('DOMContentLoaded', () => {
-  GameController.init();
+  new GameController();
 });

@@ -1,423 +1,334 @@
-// Gerenciador de Lobby
-const Lobby = {
-  // Inicializar lobby
-  init() {
-    this.setupEventListeners();
-    this.loadRooms();
-  },
-
-  // Configurar event listeners do lobby
-  setupEventListeners() {
-    // Tabs de salas públicas/privadas
-    document.getElementById('tab-public-rooms').addEventListener('click', () => {
-      this.switchRoomTab('public');
-    });
+// Lobby.js - Gerencia a interface do lobby
+class Lobby {
+  constructor() {
+    this.rooms = [];
+    this.currentFilter = 'all'; // 'all', 'public', 'private'
+    this.searchTerm = '';
+    this.isLoading = false;
     
-    document.getElementById('tab-private-rooms').addEventListener('click', () => {
-      this.switchRoomTab('private');
-    });
+    // Referências para elementos DOM
+    this.roomsList = document.getElementById('rooms-list');
+    this.searchInput = document.getElementById('search-rooms');
+    this.filterTabs = document.querySelectorAll('.room-tab');
+    this.createRoomBtn = document.getElementById('btn-create-room');
+    this.refreshBtn = document.getElementById('btn-refresh-rooms');
     
-    // Botão para criar sala
-    document.getElementById('btn-create-room').addEventListener('click', () => {
-      UI.showModal(UI.elements.createRoomModal);
-    });
-    
-    // Botão para voltar ao menu
-    document.getElementById('btn-back-to-menu').addEventListener('click', () => {
+    // Inicializar a página
+    this.initialize();
+  }
+  
+  async initialize() {
+    try {
+      // Verificar autenticação
+      this.checkAuth();
+      
+      // Configurar event listeners
+      this.setupEventListeners();
+      
+      // Carregar salas
+      await this.loadRooms();
+    } catch (error) {
+      console.error('Erro ao inicializar lobby:', error);
+      UI.showToast('Erro ao inicializar lobby: ' + error.message, 'error');
+    }
+  }
+  
+  checkAuth() {
+    // Verificar se o usuário está autenticado
+    if (!auth.currentUser) {
       window.location.href = 'index.html';
+    }
+    
+    // Atualizar UI do perfil
+    this.updateProfileUI();
+  }
+  
+  updateProfileUI() {
+    // Atualizar nome do usuário e avatar
+    const userDisplay = document.getElementById('user-display');
+    const username = document.getElementById('username');
+    const userAvatar = document.getElementById('user-avatar');
+    
+    if (userDisplay && auth.currentUser) {
+      // Nome do usuário
+      username.textContent = auth.currentUser.displayName || 'Jogador';
+      
+      // Avatar do usuário
+      const avatarURL = localStorage.getItem('avatarURL');
+      const avatarSeed = localStorage.getItem('avatar');
+      
+      if (avatarURL) {
+        userAvatar.src = avatarURL;
+      } else if (avatarSeed) {
+        userAvatar.src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${avatarSeed}`;
+      } else if (auth.currentUser.photoURL) {
+        userAvatar.src = auth.currentUser.photoURL;
+      } else {
+        // Gerar avatar baseado no UID
+        const seed = auth.currentUser.uid.substring(0, 8);
+        userAvatar.src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${seed}`;
+      }
+    }
+  }
+  
+  setupEventListeners() {
+    // Tabs de filtro
+    this.filterTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        this.filterTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        this.currentFilter = tab.dataset.filter;
+        this.filterRooms();
+      });
     });
     
-    // Formulário para criar sala
-    document.getElementById('create-room-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      this.handleCreateRoom();
+    // Pesquisa
+    this.searchInput.addEventListener('input', () => {
+      this.searchTerm = this.searchInput.value.toLowerCase();
+      this.filterRooms();
     });
     
-    // Botão para entrar por código
-    document.getElementById('btn-join-by-code').addEventListener('click', () => {
-      UI.showModal(UI.elements.joinPrivateRoomModal);
-    });
-    
-    // Formulário para entrar em sala privada
-    document.getElementById('join-private-room-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      this.handleJoinPrivateRoom();
-    });
-    
-    // Botão para atualizar salas
-    document.getElementById('btn-refresh-rooms').addEventListener('click', () => {
+    // Botão de atualizar
+    this.refreshBtn.addEventListener('click', () => {
       this.loadRooms();
     });
     
-    // Pesquisa de salas
-    document.getElementById('room-search').addEventListener('input', (e) => {
-      this.filterRooms(e.target.value);
+    // Botão de criar sala
+    this.createRoomBtn.addEventListener('click', () => {
+      UI.showModal(document.getElementById('create-room-modal'));
     });
-
-    // Modo No Mercy
-    const nomercyMode = document.getElementById('nomercy-mode');
-    const customMode = document.getElementById('custom-mode');
-    const classicMode = document.getElementById('classic-mode');
-    const customRules = document.getElementById('custom-rules');
-    const nomercyRules = document.getElementById('nomercy-rules');
     
-    if (nomercyMode && customRules && nomercyRules) {
-      nomercyMode.addEventListener('change', () => {
-        customRules.classList.add('hidden');
-        nomercyRules.classList.remove('hidden');
-      });
-      
-      customMode.addEventListener('change', () => {
-        customRules.classList.remove('hidden');
-        nomercyRules.classList.add('hidden');
-      });
-      
-      classicMode.addEventListener('change', () => {
-        customRules.classList.add('hidden');
-        nomercyRules.classList.add('hidden');
+    // Formulário de criação de sala
+    const createRoomForm = document.getElementById('create-room-form');
+    if (createRoomForm) {
+      createRoomForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.createRoom();
       });
     }
-  },
-
-  // Trocar entre abas de salas públicas/privadas
-  switchRoomTab(tab) {
-    const tabPublic = document.getElementById('tab-public-rooms');
-    const tabPrivate = document.getElementById('tab-private-rooms');
     
-    if (tab === 'public') {
-      tabPublic.classList.add('active');
-      tabPrivate.classList.remove('active');
-      this.loadRooms(false);
-    } else {
-      tabPublic.classList.remove('active');
-      tabPrivate.classList.add('active');
-      this.loadRooms(true);
+    // Botão de logout
+    const logoutBtn = document.getElementById('btn-logout');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        this.logout();
+      });
     }
-  },
-
-  // Carregar salas do Firebase
-  async loadRooms(isPrivate = false) {
+    
+    // Botão de voltar
+    const backBtn = document.getElementById('btn-back');
+    if (backBtn) {
+      backBtn.addEventListener('click', () => {
+        window.location.href = 'index.html';
+      });
+    }
+    
+    // Configurar botões de entrar em sala depois de renderizar as salas
+    this.setupJoinButtons();
+  }
+  
+  setupJoinButtons() {
+    // Delegação de eventos para botões de entrar em sala
+    this.roomsList.addEventListener('click', (e) => {
+      const joinButton = e.target.closest('.btn-join-room');
+      if (joinButton) {
+        const roomId = joinButton.dataset.roomId;
+        this.joinRoom(roomId);
+      }
+    });
+  }
+  
+  async loadRooms() {
     try {
-      // Mostrar carregamento
-      UI.elements.roomsList.innerHTML = '<div class="loading">Carregando salas...</div>';
+      this.isLoading = true;
+      this.showLoading();
       
-      // Consultar salas
-      const roomsRef = database.ref('rooms');
-      const roomsSnapshot = await roomsRef
-        .orderByChild('updated_at')
-        .limitToLast(50)
-        .once('value');
+      // Obter lista de salas
+      this.rooms = await FirebaseService.rooms.list();
       
-      const rooms = [];
-      roomsSnapshot.forEach(snapshot => {
-        const room = snapshot.val();
-        if (room && room.isPrivate === isPrivate && room.status !== 'closed') {
-          rooms.push({
-            ...room,
-            id: snapshot.key
-          });
-        }
-        return false;
+      // Ordenar salas (primeiro aguardando, depois jogando)
+      this.rooms.sort((a, b) => {
+        if (a.status === 'waiting' && b.status !== 'waiting') return -1;
+        if (a.status !== 'waiting' && b.status === 'waiting') return 1;
+        return b.updatedAt - a.updatedAt; // Mais recentes primeiro
       });
       
-      // Ordenar por atualização mais recente
-      rooms.sort((a, b) => b.updated_at - a.updated_at);
+      // Aplicar filtros
+      this.filterRooms();
       
-      // Renderizar salas
-      this.renderRooms(rooms);
+      this.isLoading = false;
+      this.hideLoading();
     } catch (error) {
       console.error('Erro ao carregar salas:', error);
       UI.showToast('Erro ao carregar salas: ' + error.message, 'error');
-      UI.elements.roomsList.innerHTML = '<div class="error-message">Erro ao carregar salas. Tente novamente.</div>';
+      
+      this.isLoading = false;
+      this.hideLoading();
     }
-  },
-
-  // Renderizar lista de salas
-  renderRooms(rooms) {
-    if (!rooms || rooms.length === 0) {
-      UI.elements.roomsList.innerHTML = '<div class="no-rooms-message">Nenhuma sala disponível no momento. Crie uma nova sala!</div>';
-      return;
+  }
+  
+  filterRooms() {
+    let filteredRooms = [...this.rooms];
+    
+    // Aplicar filtro de tipo (todas, públicas, privadas)
+    if (this.currentFilter === 'public') {
+      filteredRooms = filteredRooms.filter(room => !room.isPrivate);
+    } else if (this.currentFilter === 'private') {
+      filteredRooms = filteredRooms.filter(room => room.isPrivate);
     }
     
-    UI.elements.roomsList.innerHTML = '';
-    
-    rooms.forEach(room => {
-      const playersCount = room.players ? Object.keys(room.players).length : 0;
-      const isPlaying = room.status === 'playing';
-      const canJoin = playersCount < room.maxPlayers && !isPlaying;
-      
-      let modeLabel = 'Clássico';
-      let modeIcon = '<i class="fas fa-star"></i>';
-      
-      if (room.gameMode === 'nomercy') {
-        modeLabel = 'No Mercy';
-        modeIcon = '<i class="fas fa-skull"></i>';
-      } else if (room.gameMode === 'custom') {
-        modeLabel = 'Personalizado';
-        modeIcon = '<i class="fas fa-sliders-h"></i>';
-      }
-      
-      const roomCard = document.createElement('div');
-      roomCard.className = 'room-card';
-      roomCard.innerHTML = `
-        <div class="room-card-header">
-          <h3 class="room-card-title">${room.name}</h3>
-          <span class="room-card-status ${isPlaying ? 'playing' : 'waiting'}">${isPlaying ? 'Em jogo' : 'Aguardando'}</span>
-        </div>
-        <div class="room-card-info">
-          <div class="room-card-info-item">
-            <i class="fas fa-users"></i> ${playersCount}/${room.maxPlayers} jogadores
-          </div>
-          <div class="room-card-info-item">
-            ${modeIcon} ${modeLabel}
-          </div>
-          ${room.isPrivate ? 
-            `<div class="room-card-info-item">
-              <i class="fas fa-lock"></i> Sala Privada
-            </div>` : ''}
-        </div>
-        <div class="room-card-actions">
-          <button class="btn btn-primary btn-join-room" data-room-id="${room.id}" ${canJoin ? '' : 'disabled'}>
-            ${canJoin ? 'Entrar' : (isPlaying ? 'Em jogo' : 'Sala cheia')}
-          </button>
-        </div>
-      `;
-      
-      // Adicionar evento ao botão de entrar
-      const btnJoin = roomCard.querySelector('.btn-join-room');
-      if (canJoin) {
-        btnJoin.addEventListener('click', () => {
-          this.joinRoom(room.id);
-        });
-      }
-      
-      UI.elements.roomsList.appendChild(roomCard);
-    });
-  },
-
-  // Filtrar salas por pesquisa
-  filterRooms(query) {
-    const roomCards = document.querySelectorAll('.room-card');
-    const normalizedQuery = query.toLowerCase().trim();
-    
-    roomCards.forEach(card => {
-      const roomName = card.querySelector('.room-card-title').textContent.toLowerCase();
-      
-      if (roomName.includes(normalizedQuery)) {
-        card.style.display = 'flex';
-      } else {
-        card.style.display = 'none';
-      }
-    });
-    
-    // Mostrar mensagem se nenhuma sala for encontrada
-    const visibleRooms = Array.from(roomCards).filter(card => card.style.display !== 'none').length;
-    
-    if (visibleRooms === 0) {
-      const noRoomsElement = document.querySelector('.no-rooms-message') || document.createElement('div');
-      noRoomsElement.className = 'no-rooms-message';
-      noRoomsElement.textContent = 'Nenhuma sala encontrada com este nome.';
-      
-      if (!document.querySelector('.no-rooms-message')) {
-        UI.elements.roomsList.appendChild(noRoomsElement);
-      }
-    } else {
-      const noRoomsElement = document.querySelector('.no-rooms-message');
-      if (noRoomsElement) {
-        noRoomsElement.remove();
-      }
+    // Aplicar pesquisa
+    if (this.searchTerm) {
+      filteredRooms = filteredRooms.filter(room => 
+        room.name.toLowerCase().includes(this.searchTerm) ||
+        room.host.name.toLowerCase().includes(this.searchTerm) ||
+        room.id.toLowerCase().includes(this.searchTerm)
+      );
     }
-  },
-
-  // Entrar em uma sala
-  async joinRoom(roomId) {
+    
+    // Atualizar UI
+    UI.renderRooms(filteredRooms);
+    
+    // Configurar botões de entrar
+    this.setupJoinButtons();
+  }
+  
+  async createRoom() {
     try {
-      // CORREÇÃO: Garantir que roomId é válido
-      if (!roomId) {
-        UI.showToast('ID da sala inválido!', 'error');
-        return;
-      }
-
-      // Verificar se a sala existe e tem espaço
-      const roomSnapshot = await database.ref(`rooms/${roomId}`).once('value');
-      const room = roomSnapshot.val();
+      const roomNameInput = document.getElementById('room-name');
+      const maxPlayersInput = document.getElementById('max-players');
+      const isPrivateInput = document.getElementById('is-private');
+      const gameModeSelect = document.getElementById('game-mode');
       
-      if (!room) {
-        UI.showToast('Sala não encontrada!', 'error');
-        return;
-      }
+      // Obter valores do formulário
+      const roomName = roomNameInput.value.trim();
+      const maxPlayers = parseInt(maxPlayersInput.value) || 4;
+      const isPrivate = isPrivateInput.checked;
+      const gameMode = gameModeSelect.value;
       
-      const playersCount = room.players ? Object.keys(room.players).length : 0;
-      
-      if (playersCount >= room.maxPlayers) {
-        UI.showToast('Sala cheia!', 'error');
+      // Validar campos
+      if (!roomName) {
+        UI.showToast('Digite um nome para a sala', 'warning');
         return;
       }
       
-      if (room.status === 'playing') {
-        UI.showToast('Jogo já em andamento!', 'error');
+      if (maxPlayers < 2 || maxPlayers > 10) {
+        UI.showToast('O número de jogadores deve ser entre 2 e 10', 'warning');
         return;
       }
       
-      // CORREÇÃO: Usar timeout para garantir que o redirecionamento aconteça
-      if (window.location.pathname.includes('lobby.html')) {
-        // CORREÇÃO: Garantir que Room.initRoom é executado corretamente
-        try {
-          await Room.initRoom(roomId);
-          UI.showToast('Entrando na sala...', 'success');
-        } catch (error) {
-          console.error('Erro ao inicializar sala:', error);
-          UI.showToast('Erro ao entrar na sala. Tentando novamente...', 'error');
-          setTimeout(() => this.joinRoom(roomId), 1000);
-        }
-      } else {
-        // CORREÇÃO: Salvar o roomId em localStorage para recuperação em caso de erro
-        localStorage.setItem('pendingRoomId', roomId);
-        UI.showToast('Redirecionando para a sala...', 'info');
-        // Se não, redirecionar para a página de lobby com o ID da sala
-        setTimeout(() => {
-          window.location.href = `lobby.html?roomId=${roomId}`;
-        }, 500);
-      }
-    } catch (error) {
-      console.error('Erro ao entrar na sala:', error);
-      UI.showToast('Erro ao entrar na sala: ' + error.message, 'error');
-    }
-  },
-
-  // Entrar em sala privada por código
-  async handleJoinPrivateRoom() {
-    try {
-      const codeInput = document.getElementById('private-room-code');
-      const code = codeInput.value.trim().toUpperCase();
+      // Dados da sala
+      const roomData = {
+        name: roomName,
+        maxPlayers: maxPlayers,
+        isPrivate: isPrivate,
+        gameMode: gameMode
+      };
       
-      if (!code) {
-        UI.showToast('Digite o código da sala!', 'error');
-        return;
-      }
-      
-      // Procurar sala pelo código
-      const roomsRef = database.ref('rooms');
-      const roomsSnapshot = await roomsRef
-        .orderByChild('code')
-        .equalTo(code)
-        .once('value');
-      
-      const rooms = [];
-      roomsSnapshot.forEach(snapshot => {
-        rooms.push({
-          id: snapshot.key,
-          ...snapshot.val()
-        });
-        return false;
-      });
-      
-      if (rooms.length === 0) {
-        UI.showToast('Sala não encontrada!', 'error');
-        return;
-      }
-      
-      const room = rooms[0];
-      
-      // Verificar se a sala tem espaço
-      const playersCount = room.players ? Object.keys(room.players).length : 0;
-      
-      if (playersCount >= room.maxPlayers) {
-        UI.showToast('Sala cheia!', 'error');
-        return;
-      }
-      
-      if (room.status === 'playing') {
-        UI.showToast('Jogo já em andamento!', 'error');
-        return;
-      }
+      // Criar sala
+      const room = await FirebaseService.rooms.create(roomData);
       
       // Fechar modal
-      UI.closeModal(UI.elements.joinPrivateRoomModal);
+      UI.closeModal(document.getElementById('create-room-modal'));
       
-      // Entrar na sala
-      this.joinRoom(room.id);
-    } catch (error) {
-      console.error('Erro ao entrar na sala privada:', error);
-      UI.showToast('Erro ao entrar na sala: ' + error.message, 'error');
-    }
-  },
-
-  // Criar uma nova sala
-  async handleCreateRoom() {
-    try {
-      // Obter dados do formulário
-      const name = document.getElementById('room-name').value.trim();
-      const capacity = document.getElementById('room-capacity').value;
-      const isPrivate = document.getElementById('room-is-private').checked;
-      const code = isPrivate ? document.getElementById('room-code').value.trim() : null;
-      const gameMode = document.querySelector('input[name="game-mode"]:checked').value;
-      
-      // Regras personalizadas
-      const stackDraw2 = document.getElementById('rule-stack-draw2').checked;
-      const stackDraw4 = document.getElementById('rule-stack-draw4').checked;
-      const forcePlay = document.getElementById('rule-force-play').checked;
-      const special99 = document.getElementById('rule-special99').checked;
-      
-      // Validar dados
-      if (!name) {
-        UI.showToast('Digite um nome para a sala!', 'error');
-        return;
-      }
-      
-      if (isPrivate && !code) {
-        UI.showToast('Gere um código para a sala privada!', 'error');
-        return;
-      }
-      
-      UI.showToast('Criando sala...', 'info');
-      
-      // CORREÇÃO: Adicionar mais informações de feedback
-      try {
-        // Criar sala
-        const roomData = {
-          name,
-          capacity,
-          isPrivate,
-          code,
-          gameMode,
-          stackDraw2,
-          stackDraw4,
-          forcePlay,
-          special99
-        };
-        
-        const roomId = await Room.createRoom(roomData);
-        
-        if (roomId) {
-          // Fechar modal
-          UI.closeModal(UI.elements.createRoomModal);
-          
-          // Limpar formulário
-          document.getElementById('create-room-form').reset();
-          
-          // CORREÇÃO: Melhorar o processo de entrada na sala
-          UI.showToast('Sala criada! Entrando na sala...', 'success');
-          
-          // Garantir tempo para o Firebase sincronizar
-          setTimeout(async () => {
-            try {
-              // Ir para a sala
-              await this.joinRoom(roomId);
-            } catch (joinError) {
-              console.error('Erro ao entrar na sala após criação:', joinError);
-              // Última tentativa - recarregar a página com o roomId na URL
-              window.location.href = `lobby.html?roomId=${roomId}`;
-            }
-          }, 1000);
-        }
-      } catch (error) {
-        console.error('Erro específico ao criar sala:', error);
-        UI.showToast('Falha ao criar sala. Tente novamente.', 'error');
-      }
+      // Redirecionar para a sala
+      window.location.href = `game.html?roomCode=${room.id}`;
     } catch (error) {
       console.error('Erro ao criar sala:', error);
       UI.showToast('Erro ao criar sala: ' + error.message, 'error');
     }
   }
-};
+  
+  async joinRoom(roomId) {
+    try {
+      // Verificar se é uma sala privada
+      const room = this.rooms.find(r => r.id === roomId);
+      
+      if (room && room.isPrivate) {
+        // Mostrar modal para digitar código da sala
+        const codeModal = document.getElementById('room-code-modal');
+        const codeInput = document.getElementById('room-code-input');
+        const submitCodeBtn = document.getElementById('submit-room-code');
+        
+        // Limpar campo
+        codeInput.value = '';
+        
+        // Mostrar modal
+        UI.showModal(codeModal);
+        
+        // Focus no input
+        setTimeout(() => codeInput.focus(), 300);
+        
+        // Configurar submit do código
+        submitCodeBtn.onclick = async () => {
+          const code = codeInput.value.trim();
+          
+          if (code !== roomId) {
+            UI.showToast('Código incorreto', 'error');
+            return;
+          }
+          
+          // Fechar modal
+          UI.closeModal(codeModal);
+          
+          // Entrar na sala
+          await this.processJoinRoom(roomId);
+        };
+      } else {
+        // Entrar diretamente na sala pública
+        await this.processJoinRoom(roomId);
+      }
+    } catch (error) {
+      console.error('Erro ao entrar na sala:', error);
+      UI.showToast('Erro ao entrar na sala: ' + error.message, 'error');
+    }
+  }
+  
+  async processJoinRoom(roomId) {
+    try {
+      // Mostrar loading
+      this.showLoading();
+      
+      // Entrar na sala
+      await FirebaseService.rooms.join(roomId);
+      
+      // Redirecionar para a sala
+      window.location.href = `game.html?roomCode=${roomId}`;
+    } catch (error) {
+      console.error('Erro ao entrar na sala:', error);
+      UI.showToast('Erro ao entrar na sala: ' + error.message, 'error');
+      
+      this.hideLoading();
+    }
+  }
+  
+  async logout() {
+    try {
+      await auth.signOut();
+      window.location.href = 'index.html';
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      UI.showToast('Erro ao fazer logout: ' + error.message, 'error');
+    }
+  }
+  
+  showLoading() {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    if (loadingOverlay) {
+      loadingOverlay.classList.add('show');
+    }
+  }
+  
+  hideLoading() {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    if (loadingOverlay) {
+      loadingOverlay.classList.remove('show');
+    }
+  }
+}
+
+// Inicializar quando o DOM estiver carregado
+document.addEventListener('DOMContentLoaded', () => {
+  new Lobby();
+});
