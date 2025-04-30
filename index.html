@@ -18,10 +18,19 @@
   
   <!-- CSS -->
   <link rel="stylesheet" href="css/styles.css">
+  
+  <!-- Inline CSS para remover preloader -->
+  <style>
+    #preloader {
+      display: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+    }
+  </style>
 </head>
 <body>
   <!-- Preloader -->
-  <div id="preloader">
+  <div id="preloader" style="display:none;">
     <div class="preloader-content">
       <div class="game-logo">
         <span class="red">U</span>
@@ -55,6 +64,7 @@
         <div id="tab-register" class="tab">Registrar</div>
       </div>
       
+      <!-- Login Form -->
       <form id="login-form" class="auth-form">
         <div class="form-group">
           <label for="login-email" class="form-label">E-mail</label>
@@ -73,12 +83,13 @@
         </div>
         
         <div class="social-login">
-          <button type="button" id="login-google" class="btn w-full">
+          <button type="button" id="login-google" class="btn btn-social btn-google">
             <i class="fab fa-google"></i> Entrar com Google
           </button>
         </div>
       </form>
       
+      <!-- Register Form -->
       <form id="register-form" class="auth-form hidden">
         <div class="form-group">
           <label for="register-username" class="form-label">Nome de usuário</label>
@@ -277,5 +288,15 @@
   <script src="js/firebase.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/app.js"></script>
+  
+  <!-- Remover preloader quando carregamento completo -->
+  <script>
+    window.addEventListener('load', function() {
+      const preloader = document.getElementById('preloader');
+      if (preloader) {
+        preloader.style.display = 'none';
+      }
+    });
+  </script>
 </body>
 </html>

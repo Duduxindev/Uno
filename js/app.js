@@ -1,16 +1,74 @@
 // App.js - Controlador principal da aplicação
 document.addEventListener('DOMContentLoaded', () => {
+  console.log("DOM loaded - initializing app");
+  
+  // Remover o preloader imediatamente
+  const preloader = document.getElementById('preloader');
+  if (preloader) {
+    preloader.style.display = 'none';
+  }
+  
+  // Inicializar Firebase
+  initFirebase();
+  
   // Inicializar UI
-  UI.init();
+  initializeUI();
   
   // Verificar autenticação e configurar evento de state change
-  auth.onAuthStateChanged((user) => {
-    handleAuthStateChanged(user);
-  });
+  if (typeof firebase !== 'undefined' && firebase.auth) {
+    firebase.auth().onAuthStateChanged((user) => {
+      handleAuthStateChanged(user);
+    });
+  } else {
+    console.error("Firebase auth not available");
+  }
   
   // Configurar event listeners para formulários de autenticação
   setupFormListeners();
 });
+
+function initFirebase() {
+  if (typeof firebase === 'undefined') {
+    console.error("Firebase não está carregado!");
+    return;
+  }
+  
+  try {
+    // Estas credenciais são apenas exemplos e precisam ser substituídas pelas suas
+    const firebaseConfig = {
+      apiKey: "AIzaSyDJzk15RFwx7MuHsVeGaBMnkghuY5-c-Hc",
+      authDomain: "uno-online-game.firebaseapp.com", 
+      databaseURL: "https://uno-online-game-default-rtdb.firebaseio.com",
+      projectId: "uno-online-game",
+      storageBucket: "uno-online-game.appspot.com",
+      messagingSenderId: "325148128509",
+      appId: "1:325148128509:web:d9d3f4b8b8b8b8b8b8b8b8"
+    };
+
+    // Initialize Firebase se ainda não estiver inicializado
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    
+    console.log("Firebase inicializado com sucesso");
+    
+    // Definir variáveis globais para acesso fácil
+    window.auth = firebase.auth();
+    window.database = firebase.database();
+    window.storage = firebase.storage();
+    window.googleProvider = new firebase.auth.GoogleAuthProvider();
+    
+  } catch (error) {
+    console.error("Erro ao inicializar Firebase:", error);
+  }
+}
+
+function initializeUI() {
+  // Inicializar UI se o objeto UI estiver disponível
+  if (typeof UI !== 'undefined') {
+    UI.init();
+  }
+}
 
 // Função para lidar com mudanças no estado de autenticação
 function handleAuthStateChanged(user) {
@@ -18,15 +76,20 @@ function handleAuthStateChanged(user) {
   
   if (user) {
     // Usuário está logado
-    console.log('Usuário logado:', user.displayName || user.email);
+    console.log('Usuário logado:', user.displayName || user.email || user.uid);
     
     // Atualizar UI com informações do usuário
     updateUserUI(user);
     
     // Redirecionar conforme página atual
-    if (pathname.includes('index.html') || pathname === '/') {
+    if (pathname.includes('index.html') || pathname === '/' || pathname === '') {
       // Na página inicial, mostrar menu principal
-      UI.showSection('main-menu');
+      if (typeof UI !== 'undefined') {
+        UI.showSection('main-menu');
+      } else {
+        document.getElementById('auth-section').classList.add('hidden');
+        document.getElementById('main-menu').classList.remove('hidden');
+      }
     }
   } else {
     // Usuário não está logado
@@ -35,16 +98,26 @@ function handleAuthStateChanged(user) {
     // Redirecionar para login se estiver em páginas protegidas
     if (pathname.includes('lobby.html') || pathname.includes('game.html')) {
       window.location.href = 'index.html';
-    } else if (pathname.includes('index.html') || pathname === '/') {
+    } else if (pathname.includes('index.html') || pathname === '/' || pathname === '') {
       // Na página inicial, mostrar tela de autenticação
-      UI.showSection('auth-section');
-      UI.showTab('login');
+      if (typeof UI !== 'undefined') {
+        UI.showSection('auth-section');
+        UI.showTab('login');
+      } else {
+        document.getElementById('main-menu').classList.add('hidden');
+        document.getElementById('auth-section').classList.remove('hidden');
+        
+        // Mostrar tab de login
+        document.getElementById('tab-login').click();
+      }
     }
   }
 }
 
 // Função para configurar eventos dos formulários
 function setupFormListeners() {
+  console.log("Configurando event listeners para formulários");
+  
   // Formulário de login
   const loginForm = document.getElementById('login-form');
   if (loginForm) {
@@ -67,21 +140,43 @@ function setupFormListeners() {
   const googleLoginBtn = document.getElementById('login-google');
   if (googleLoginBtn) {
     googleLoginBtn.addEventListener('click', async () => {
+      console.log("Botão de login com Google clicado");
       await loginWithGoogle();
     });
   }
   
-  // Formulário de configurações
-  const settingsForm = document.getElementById('settings-form');
-  if (settingsForm) {
-    settingsForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      await updateSettings(settingsForm);
-    });
-  }
+  // Configurar tabs de login/registro
+  setupTabs();
   
   // Botões de menu principal
   setupMainMenuButtons();
+}
+
+// Função para configurar as tabs de login e registro
+function setupTabs() {
+  const tabLogin = document.getElementById('tab-login');
+  const tabRegister = document.getElementById('tab-register');
+  const loginForm = document.getElementById('login-form');
+  const registerForm = document.getElementById('register-form');
+  const authTitle = document.getElementById('auth-title');
+  
+  if (tabLogin && tabRegister && loginForm && registerForm) {
+    tabLogin.addEventListener('click', () => {
+      tabLogin.classList.add('active');
+      tabRegister.classList.remove('active');
+      loginForm.classList.remove('hidden');
+      registerForm.classList.add('hidden');
+      if (authTitle) authTitle.textContent = 'Login';
+    });
+    
+    tabRegister.addEventListener('click', () => {
+      tabLogin.classList.remove('active');
+      tabRegister.classList.add('active');
+      loginForm.classList.add('hidden');
+      registerForm.classList.remove('hidden');
+      if (authTitle) authTitle.textContent = 'Registrar';
+    });
+  }
 }
 
 // Função para configurar botões do menu principal
@@ -98,7 +193,7 @@ function setupMainMenuButtons() {
   const btnRules = document.getElementById('btn-rules');
   if (btnRules) {
     btnRules.addEventListener('click', () => {
-      UI.showModal(document.getElementById('rules-modal'));
+      showModal(document.getElementById('rules-modal'));
     });
   }
   
@@ -107,14 +202,14 @@ function setupMainMenuButtons() {
   if (btnSettings) {
     btnSettings.addEventListener('click', () => {
       // Preencher campos com dados atuais do usuário
-      const user = auth.currentUser;
+      const user = firebase.auth().currentUser;
       if (user) {
         const displayNameInput = document.getElementById('display-name');
         if (displayNameInput) {
           displayNameInput.value = user.displayName || '';
         }
       }
-      UI.showModal(document.getElementById('settings-modal'));
+      showModal(document.getElementById('settings-modal'));
     });
   }
   
@@ -125,6 +220,41 @@ function setupMainMenuButtons() {
       await handleLogout();
     });
   }
+}
+
+// Função para mostrar modal
+function showModal(modal) {
+  if (!modal) return;
+  
+  modal.style.display = 'flex';
+  setTimeout(() => {
+    modal.classList.add('show');
+  }, 10);
+  
+  // Adicionar evento de fechamento em clique fora
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeModal(modal);
+    }
+  });
+  
+  // Configurar botão de fechar
+  const closeBtn = modal.querySelector('.close-modal');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      closeModal(modal);
+    });
+  }
+}
+
+// Função para fechar modal
+function closeModal(modal) {
+  if (!modal) return;
+  
+  modal.classList.remove('show');
+  setTimeout(() => {
+    modal.style.display = 'none';
+  }, 300);
 }
 
 // Função para lidar com o login
@@ -139,25 +269,28 @@ async function handleLogin() {
     
     // Validar campos
     if (!email || !password) {
-      UI.showToast('Preencha todos os campos', 'warning');
+      showToast('Preencha todos os campos', 'warning');
       return;
     }
     
     // Mostrar loading
     const loginButton = document.querySelector('#login-form button[type="submit"]');
-    loginButton.disabled = true;
-    loginButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
+    if (loginButton) {
+      loginButton.disabled = true;
+      loginButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
+    }
     
     // Fazer login
-    await auth.signInWithEmailAndPassword(email, password);
+    await firebase.auth().signInWithEmailAndPassword(email, password);
     
     // Limpar campos
     emailInput.value = '';
     passwordInput.value = '';
     
     // Mostrar menu principal
-    UI.showToast('Login realizado com sucesso!', 'success');
-    UI.showSection('main-menu');
+    showToast('Login realizado com sucesso!', 'success');
+    
+    // Atualizar UI (handleAuthStateChanged será chamado automaticamente)
   } catch (error) {
     console.error('Erro no login:', error);
     
@@ -174,7 +307,7 @@ async function handleLogin() {
       errorMessage = 'Muitas tentativas de login. Tente novamente mais tarde.';
     }
     
-    UI.showToast(errorMessage, 'error');
+    showToast(errorMessage, 'error');
   } finally {
     // Restaurar botão
     const loginButton = document.querySelector('#login-form button[type="submit"]');
@@ -201,27 +334,29 @@ async function handleRegister() {
     
     // Validar campos
     if (!username || !email || !password || !confirmPassword) {
-      UI.showToast('Preencha todos os campos', 'warning');
+      showToast('Preencha todos os campos', 'warning');
       return;
     }
     
     if (password !== confirmPassword) {
-      UI.showToast('As senhas não coincidem', 'warning');
+      showToast('As senhas não coincidem', 'warning');
       return;
     }
     
     if (password.length < 6) {
-      UI.showToast('A senha deve ter pelo menos 6 caracteres', 'warning');
+      showToast('A senha deve ter pelo menos 6 caracteres', 'warning');
       return;
     }
     
     // Mostrar loading
     const registerButton = document.querySelector('#register-form button[type="submit"]');
-    registerButton.disabled = true;
-    registerButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
+    if (registerButton) {
+      registerButton.disabled = true;
+      registerButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
+    }
     
     // Criar usuário
-    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+    const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
     
     // Atualizar perfil
     await userCredential.user.updateProfile({
@@ -239,8 +374,9 @@ async function handleRegister() {
     confirmPasswordInput.value = '';
     
     // Mostrar menu principal
-    UI.showToast('Registro realizado com sucesso!', 'success');
-    UI.showSection('main-menu');
+    showToast('Registro realizado com sucesso!', 'success');
+    
+    // Atualizar UI (handleAuthStateChanged será chamado automaticamente)
   } catch (error) {
     console.error('Erro no registro:', error);
     
@@ -255,7 +391,7 @@ async function handleRegister() {
       errorMessage = 'Senha fraca. Use uma senha mais forte.';
     }
     
-    UI.showToast(errorMessage, 'error');
+    showToast(errorMessage, 'error');
   } finally {
     // Restaurar botão
     const registerButton = document.querySelector('#register-form button[type="submit"]');
@@ -271,16 +407,14 @@ async function handleLogout() {
   try {
     // Mostrar confirmação
     if (confirm('Tem certeza que deseja sair?')) {
-      await auth.signOut();
-      UI.showToast('Logout realizado com sucesso!', 'success');
+      await firebase.auth().signOut();
+      showToast('Logout realizado com sucesso!', 'success');
       
-      // Mostrar tela de autenticação
-      UI.showSection('auth-section');
-      UI.showTab('login');
+      // Atualizar UI (handleAuthStateChanged será chamado automaticamente)
     }
   } catch (error) {
     console.error('Erro no logout:', error);
-    UI.showToast('Erro ao fazer logout: ' + error.message, 'error');
+    showToast('Erro ao fazer logout: ' + error.message, 'error');
   }
 }
 
@@ -297,25 +431,19 @@ function updateUserUI(user) {
   // Atualizar avatar do usuário
   const userAvatarElements = document.querySelectorAll('.user-avatar');
   userAvatarElements.forEach(element => {
-    // Usar a função getAvatarUrl do Firebase Service para garantir consistência
-    if (typeof getAvatarUrl === 'function') {
-      element.src = getAvatarUrl(user);
+    const avatarURL = localStorage.getItem('avatarURL');
+    const avatarSeed = localStorage.getItem('avatar');
+    
+    if (avatarURL) {
+      element.src = avatarURL;
+    } else if (avatarSeed) {
+      element.src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${avatarSeed}`;
+    } else if (user.photoURL) {
+      element.src = user.photoURL;
     } else {
-      // Fallback se a função não estiver disponível
-      const avatarURL = localStorage.getItem('avatarURL');
-      const avatarSeed = localStorage.getItem('avatar');
-      
-      if (avatarURL) {
-        element.src = avatarURL;
-      } else if (avatarSeed) {
-        element.src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${avatarSeed}`;
-      } else if (user.photoURL) {
-        element.src = user.photoURL;
-      } else {
-        // Gerar um avatar fixo baseado no UID para evitar mudanças
-        const fixedSeed = user.uid ? user.uid.substring(0, 8) : 'default';
-        element.src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${fixedSeed}`;
-      }
+      // Gerar um avatar fixo baseado no UID para evitar mudanças
+      const fixedSeed = user.uid ? user.uid.substring(0, 8) : 'default';
+      element.src = `https://api.dicebear.com/6.x/avataaars/svg?seed=${fixedSeed}`;
     }
   });
 }
@@ -323,6 +451,13 @@ function updateUserUI(user) {
 // Função para login com Google
 async function loginWithGoogle() {
   try {
+    console.log("Iniciando login com Google");
+    
+    // Verificar se o googleProvider está disponível
+    if (!window.googleProvider) {
+      window.googleProvider = new firebase.auth.GoogleAuthProvider();
+    }
+    
     // Mostrar loading
     const googleButton = document.getElementById('login-google');
     if (googleButton) {
@@ -330,8 +465,9 @@ async function loginWithGoogle() {
       googleButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
     }
     
-    // Fazer login com Google (usando popup)
-    const result = await auth.signInWithPopup(googleProvider);
+    // Fazer login com Google
+    const result = await firebase.auth().signInWithPopup(window.googleProvider);
+    console.log("Login com Google bem-sucedido", result);
     
     // Verificar se é a primeira vez que o usuário loga
     if (result.additionalUserInfo && result.additionalUserInfo.isNewUser) {
@@ -341,11 +477,12 @@ async function loginWithGoogle() {
     }
     
     // Mostrar menu principal
-    UI.showToast('Login realizado com sucesso!', 'success');
-    UI.showSection('main-menu');
+    showToast('Login com Google realizado com sucesso!', 'success');
+    
+    // Atualizar UI (handleAuthStateChanged será chamado automaticamente)
   } catch (error) {
     console.error('Erro no login com Google:', error);
-    UI.showToast('Erro ao fazer login com Google: ' + error.message, 'error');
+    showToast('Erro ao fazer login com Google: ' + error.message, 'error');
   } finally {
     // Restaurar botão
     const googleButton = document.getElementById('login-google');
@@ -356,59 +493,57 @@ async function loginWithGoogle() {
   }
 }
 
-// Função para atualizar configurações
-async function updateSettings(form) {
-  try {
-    const user = auth.currentUser;
-    if (!user) {
-      UI.showToast('Você precisa estar logado para atualizar as configurações', 'error');
-      return;
-    }
-    
-    // Obter valores do formulário
-    const displayName = form.elements['display-name'].value.trim();
-    const avatarSeed = form.elements['avatar-seed'].value;
-    
-    // Validar campos
-    if (!displayName) {
-      UI.showToast('Digite um nome de exibição', 'warning');
-      return;
-    }
-    
-    // Mostrar loading
-    const submitButton = form.querySelector('button[type="submit"]');
-    submitButton.disabled = true;
-    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
-    
-    // Atualizar nome de exibição
-    await user.updateProfile({
-      displayName: displayName
-    });
-    
-    // Salvar avatar
-    if (avatarSeed) {
-      localStorage.setItem('avatar', avatarSeed);
-      localStorage.removeItem('avatarURL'); // Remover URL antiga se existir
-    }
-    
-    // Fechar modal e atualizar UI
-    UI.closeModal(document.getElementById('settings-modal'));
-    updateUserUI(user);
-    
-    UI.showToast('Configurações atualizadas com sucesso!', 'success');
-  } catch (error) {
-    console.error('Erro ao atualizar configurações:', error);
-    UI.showToast('Erro ao atualizar configurações: ' + error.message, 'error');
-  } finally {
-    // Restaurar botão
-    const submitButton = form.querySelector('button[type="submit"]');
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.innerHTML = 'Salvar Alterações';
-    }
+// Função para mostrar toast
+function showToast(message, type = 'info', duration = 3000) {
+  // Usar o objeto UI se disponível, caso contrário usar implementação própria
+  if (typeof UI !== 'undefined' && UI.showToast) {
+    UI.showToast(message, type, duration);
+    return;
   }
+  
+  // Implementação própria
+  const toastContainer = document.getElementById('toast-container');
+  if (!toastContainer) return;
+  
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  
+  let icon = '';
+  switch (type) {
+    case 'success':
+      icon = '<i class="fas fa-check-circle"></i>';
+      break;
+    case 'error':
+      icon = '<i class="fas fa-times-circle"></i>';
+      break;
+    case 'warning':
+      icon = '<i class="fas fa-exclamation-triangle"></i>';
+      break;
+    default:
+      icon = '<i class="fas fa-info-circle"></i>';
+  }
+  
+  toast.innerHTML = `
+    <div class="toast-content">
+      <div class="toast-icon">${icon}</div>
+      <div class="toast-message">${message}</div>
+    </div>
+  `;
+  
+  toastContainer.appendChild(toast);
+  
+  // Mostrar toast
+  setTimeout(() => {
+    toast.classList.add('show');
+  }, 10);
+  
+  // Remover toast
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => {
+      if (toastContainer.contains(toast)) {
+        toastContainer.removeChild(toast);
+      }
+    }, 300);
+  }, duration);
 }
-
-// Disponibilizar funções globalmente se necessário
-window.loginWithGoogle = loginWithGoogle;
-window.updateSettings = updateSettings;
